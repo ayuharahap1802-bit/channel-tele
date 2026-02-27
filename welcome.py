@@ -1,6 +1,6 @@
 """
 TELEGRAM WELCOME BOT - BOLAPELANGI 2
-VERSI: RAILWAY + GITHUB READY
+VERSI: RAILWAY + GITHUB READY (FIXED TOKEN)
 Fitur: Auto welcome saat ada member baru join channel
 Created for: @bolapelangi2_bot
 """
@@ -14,10 +14,45 @@ from telegram.constants import ParseMode
 
 # ==================== KONFIGURASI DARI ENVIRONMENT ====================
 
+# DEBUG: Cetak semua environment variables (untuk troubleshooting)
+print("=" * 60)
+print("🔍 DEBUG: Environment Variables yang tersedia:")
+for key in os.environ.keys():
+    if "BOT" in key or "CHANNEL" in key or "TOKEN" in key:
+        print(f"   {key} = {os.environ.get(key)}")
+print("=" * 60)
+
 # Baca dari environment variable Railway
-BOT_TOKEN = os.environ.get("8793227199:AAEXajy3RDO7SpMSCloj13Z4ubX3DXNvN4M")
-CHANNEL_USERNAME = os.environ.get("@bolapelangi2_channel")
-CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1003573191693"))
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+CHANNEL_USERNAME = os.environ.get("CHANNEL_USERNAME")
+CHANNEL_ID_STR = os.environ.get("CHANNEL_ID")
+
+# DEBUG: Cetak nilai yang dibaca
+print(f"🔍 BOT_TOKEN dari env: {BOT_TOKEN}")
+print(f"🔍 CHANNEL_USERNAME dari env: {CHANNEL_USERNAME}")
+print(f"🔍 CHANNEL_ID dari env: {CHANNEL_ID_STR}")
+
+# Fallback ke default jika environment variables tidak ada
+if not BOT_TOKEN:
+    BOT_TOKEN = "8793227199:AAEXajy3RDO7SpMSCloj13Z4ubX3DXNvN4M"
+    print("⚠️ BOT_TOKEN tidak ditemukan di env, menggunakan default")
+
+if not CHANNEL_USERNAME:
+    CHANNEL_USERNAME = "@bolapelangi2_channel"
+    print("⚠️ CHANNEL_USERNAME tidak ditemukan di env, menggunakan default")
+
+if not CHANNEL_ID_STR:
+    CHANNEL_ID_STR = "-1003573191693"
+    print("⚠️ CHANNEL_ID tidak ditemukan di env, menggunakan default")
+
+# Konversi CHANNEL_ID ke integer
+try:
+    CHANNEL_ID = int(CHANNEL_ID_STR)
+    print(f"✅ CHANNEL_ID berhasil dikonversi: {CHANNEL_ID}")
+except ValueError as e:
+    print(f"❌ Gagal konversi CHANNEL_ID: {e}")
+    CHANNEL_ID = -1003573191693
+    print(f"⚠️ Menggunakan default: {CHANNEL_ID}")
 
 # ==================== KONFIGURASI LOGGING ====================
 
@@ -224,14 +259,30 @@ async def post_init(application: Application):
 def main():
     """Main function to run the bot"""
     
+    # Validasi token sebelum build
+    if not BOT_TOKEN:
+        print("❌ ERROR: BOT_TOKEN tidak boleh kosong!")
+        sys.exit(1)
+    
+    if len(BOT_TOKEN) < 40:
+        print(f"❌ ERROR: BOT_TOKEN tidak valid (terlalu pendek): {BOT_TOKEN}")
+        sys.exit(1)
+    
+    print(f"✅ BOT_TOKEN valid: {BOT_TOKEN[:10]}...{BOT_TOKEN[-5:]}")
+    
     # Buat aplikasi dengan konfigurasi tambahan untuk stabilitas
-    application = (
-        Application.builder()
-        .token(BOT_TOKEN)
-        .post_init(post_init)
-        .concurrent_updates(True)
-        .build()
-    )
+    try:
+        application = (
+            Application.builder()
+            .token(BOT_TOKEN)
+            .post_init(post_init)
+            .concurrent_updates(True)
+            .build()
+        )
+        print("✅ Application berhasil dibangun")
+    except Exception as e:
+        print(f"❌ Gagal membangun application: {e}")
+        sys.exit(1)
     
     # Tambahkan command handlers
     application.add_handler(CommandHandler("start", start_command))
