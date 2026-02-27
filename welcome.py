@@ -1,6 +1,6 @@
 """
 TELEGRAM WELCOME BOT - BOLAPELANGI 2
-VERSI: POLLING UNTUK TERMINAL/LOKAL
+VERSI: RAILWAY + GITHUB READY
 Fitur: Auto welcome saat ada member baru join channel
 Created for: @bolapelangi2_bot
 """
@@ -12,16 +12,12 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram.constants import ParseMode
 
-# ==================== KONFIGURASI ====================
+# ==================== KONFIGURASI DARI ENVIRONMENT ====================
 
-# Token bot dari BotFather
-BOT_TOKEN = "8793227199:AAEXajy3RDO7SpMSCloj13Z4ubX3DXNvN4M"
-
-# Username channel (ganti dengan username channel Anda)
-CHANNEL_USERNAME = "@bolapelangi2_channel"
-
-# ID Channel (dapatkan dengan bot @getidsbot)
-CHANNEL_ID = -1003573191693
+# Baca dari environment variable Railway
+BOT_TOKEN = os.environ.get("8793227199:AAEXajy3RDO7SpMSCloj13Z4ubX3DXNvN4M")
+CHANNEL_USERNAME = os.environ.get("@bolapelangi2_channel")
+CHANNEL_ID = int(os.environ.get("-1003573191693"))
 
 # ==================== KONFIGURASI LOGGING ====================
 
@@ -219,13 +215,23 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle errors"""
     logger.error(f"❌ ERROR: Update {update} caused error {context.error}")
 
+async def post_init(application: Application):
+    """Fungsi yang dijalankan setelah bot initialized"""
+    logger.info("🤖 Bot initialized and ready to rock on Railway!")
+
 # ==================== MAIN FUNCTION ====================
 
 def main():
     """Main function to run the bot"""
     
-    # Buat aplikasi
-    application = Application.builder().token(BOT_TOKEN).build()
+    # Buat aplikasi dengan konfigurasi tambahan untuk stabilitas
+    application = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .post_init(post_init)
+        .concurrent_updates(True)
+        .build()
+    )
     
     # Tambahkan command handlers
     application.add_handler(CommandHandler("start", start_command))
@@ -235,7 +241,6 @@ def main():
     application.add_handler(CommandHandler("kontak", kontak_command))
     
     # Handler untuk welcome message (via channel post)
-    # Filter khusus: hanya dari channel ID tertentu dan event new chat members
     application.add_handler(
         MessageHandler(
             filters.Chat(chat_id=CHANNEL_ID) & filters.StatusUpdate.NEW_CHAT_MEMBERS,
@@ -248,19 +253,24 @@ def main():
     
     # Tampilkan informasi bot
     print("=" * 60)
-    print("🤖 BOT BOLAPELANGI 2 WELCOME BOT")
+    print("🤖 BOT BOLAPELANGI 2 - RAILWAY EDITION")
     print("=" * 60)
     print(f"✅ Token: {BOT_TOKEN[:10]}...{BOT_TOKEN[-5:]}")
     print(f"✅ Channel Target: {CHANNEL_USERNAME}")
     print(f"✅ Channel ID: {CHANNEL_ID}")
     print("=" * 60)
-    print("📢 Status: RUNNING (POLLING MODE)")
+    print("📢 Status: RUNNING on RAILWAY")
     print("📢 Bot siap menyapa member baru di channel")
-    print("📢 Tekan Ctrl+C untuk menghentikan bot")
     print("=" * 60)
     
+    # Flush output untuk Railway
+    sys.stdout.flush()
+    
     # Jalankan bot dengan polling
-    application.run_polling(allowed_updates=["message", "channel_post"])
+    application.run_polling(
+        allowed_updates=["message", "channel_post"],
+        drop_pending_updates=True
+    )
 
 if __name__ == "__main__":
     main()
