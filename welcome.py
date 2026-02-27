@@ -1,15 +1,15 @@
 """
 TELEGRAM WELCOME BOT - BOLAPELANGI 2
-VERSI: LINK KLIKABLE - UNTUK RAILWAY
-Fitur: Auto welcome dengan link yang bisa diklik
+VERSI: DENGAN BUTTON INTERAKTIF
+Fitur: Auto welcome + Button di /start
 Created for: @bolapelangi2_bot
 """
 
 import os
 import logging
 import sys
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 from telegram.constants import ParseMode
 
 # ==================== KONFIGURASI DARI ENVIRONMENT ====================
@@ -53,13 +53,51 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# ==================== BUTTON HANDLERS ====================
+
+async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle button clicks"""
+    query = update.callback_query
+    await query.answer()
+    
+    user = query.from_user
+    data = query.data
+    
+    logger.info(f"🔘 Button {data} diklik oleh {user.first_name}")
+    
+    if data == "login":
+        text = "🔐 *Link Login*\n\nKlik link di bawah untuk login:\n[🔐 LOGIN SEKARANG](https://shortq.info/bolapelangi2)"
+        await query.edit_message_text(text=text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False)
+    
+    elif data == "daftar":
+        text = "📝 *Link Daftar*\n\nKlik link di bawah untuk mendaftar:\n[📝 DAFTAR SEKARANG](https://rumahbopel2.com/_View/Register.aspx)"
+        await query.edit_message_text(text=text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False)
+    
+    elif data == "claim":
+        text = "🎁 *Claim Event Parlay*\n\nKlik link di bawah untuk klaim bonus:\n[🎁 CLAIM BONUS](https://t.me/bolapelangi2_bot)"
+        await query.edit_message_text(text=text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False)
+    
+    elif data == "back":
+        await start_command(update, context)
+
 # ==================== COMMAND HANDLERS ====================
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /start command"""
-    user = update.effective_user
-    logger.info(f"🚀 /start dari {user.first_name} (ID: {user.id})")
+    """Handle /start command dengan BUTTON"""
     
+    # Cek apakah ini callback query atau pesan biasa
+    if update.callback_query:
+        user = update.callback_query.from_user
+        message = update.callback_query.message
+        send = update.callback_query.edit_message_text
+        logger.info(f"🚀 /start (via button) dari {user.first_name}")
+    else:
+        user = update.effective_user
+        message = update.message
+        send = update.message.reply_text
+        logger.info(f"🚀 /start dari {user.first_name} (ID: {user.id})")
+    
+    # Teks utama
     text = (
         f"Halo {user.first_name}! 👋\n\n"
         f"Selamat datang di *BOLAPELANGI 2 Bot*!\n\n"
@@ -67,15 +105,37 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"• Saya akan menyapa member baru di channel\n"
         f"• Info promo terbaru\n"
         f"• Cara klaim bonus\n\n"
-        f"📌 *Link Penting (Klik Langsung):*\n"
+        f"📌 *Link Penting:*\n"
         f"• [🔥 KLAIM BONUS VIA WA](https://bopel2.link/wa)\n"
-        f"• [📊 PREDIKSI & JADWAL](https://bopel2.vip/ChannelWA-Jadwal-Prediksi)\n"
-        f"• [📢 CHANNEL WHATSAPP](https://bopel2.vip/Channel-Whatsapp)\n"
-        f"• [📢 CHANNEL TELEGRAM](https://bopel2.vip/Channel-Telegram)\n\n"
+        f"• [📊 PREDIKSI & JADWAL](https://bopel2.vip/ChannelWA-Jadwal-Prediksi)\n\n"
         f"🔥 *GasPoll!* 🔥"
     )
     
-    await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False)
+    # Membuat button
+    keyboard = [
+        [
+            InlineKeyboardButton("🔐 LOGIN", callback_data='login'),
+            InlineKeyboardButton("📝 DAFTAR", callback_data='daftar'),
+        ],
+        [
+            InlineKeyboardButton("🎁 CLAIM EVENT PARLAY", callback_data='claim'),
+        ]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    # Kirim pesan dengan button
+    try:
+        await send(
+            text=text,
+            parse_mode=ParseMode.MARKDOWN,
+            disable_web_page_preview=False,
+            reply_markup=reply_markup
+        )
+        if not update.callback_query:
+            logger.info(f"✅ Pesan dengan button terkirim ke {user.first_name}")
+    except Exception as e:
+        logger.error(f"❌ Gagal kirim pesan: {e}")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /help command"""
@@ -85,7 +145,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         "📚 *BANTUAN BOT BOLAPELANGI 2*\n\n"
         "*Fitur Bot:*\n"
-        "• /start - Mulai bot\n"
+        "• /start - Mulai bot & lihat menu\n"
         "• /help - Bantuan ini\n"
         "• /promo - Info promo terbaru\n"
         "• /aturan - Syarat & ketentuan\n"
@@ -199,7 +259,7 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
         # Buat mention
         mention = f"[{first_name}](tg://user?id={user_id})"
         
-        # ===== KIRIM WELCOME DI CHANNEL (DENGAN LINK KLIKABLE) =====
+        # ===== KIRIM WELCOME DI CHANNEL =====
         welcome_text = (
             f"🎉 *SELAMAT DATANG* 🎉\n\n"
             f"Halo {mention}!\n"
@@ -224,7 +284,7 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
         except Exception as e:
             logger.error(f"❌ Gagal kirim welcome: {e}")
         
-        # ===== KIRIM PESAN PRIVATE KE MEMBER (DENGAN LINK KLIKABLE) =====
+        # ===== KIRIM PESAN PRIVATE KE MEMBER =====
         try:
             private_text = (
                 f"Halo {first_name}! 👋\n\n"
@@ -268,7 +328,7 @@ async def post_init(application: Application):
         bot_info = await application.bot.get_me()
         logger.info(f"✅ Bot: @{bot_info.username}")
         logger.info(f"✅ Channel ID: {CHANNEL_ID}")
-        logger.info("✅ Semua link sudah dalam format klikable")
+        logger.info("✅ Button sudah terpasang di /start")
     except Exception as e:
         logger.error(f"❌ Gagal: {e}")
 
@@ -278,7 +338,7 @@ def main():
     """Main function to run the bot"""
     
     print("=" * 60)
-    print("🤖 BOT BOLAPELANGI 2 - LINK KLIKABLE VERSION")
+    print("🤖 BOT BOLAPELANGI 2 - DENGAN BUTTON")
     print("=" * 60)
     
     # Validasi token
@@ -307,6 +367,9 @@ def main():
     application.add_handler(CommandHandler("aturan", aturan_command))
     application.add_handler(CommandHandler("kontak", kontak_command))
     
+    # Callback handler untuk button
+    application.add_handler(CallbackQueryHandler(button_callback))
+    
     # Welcome handler
     application.add_handler(
         MessageHandler(
@@ -320,13 +383,14 @@ def main():
     
     print("=" * 60)
     print("📢 BOT RUNNING di RAILWAY")
-    print("📢 Kirim /start untuk test link klikable")
+    print("📢 Fitur Button: AKTIF")
+    print("📢 Button: LOGIN | DAFTAR | CLAIM EVENT PARLAY")
     print("=" * 60)
     sys.stdout.flush()
     
     # Jalankan bot
     application.run_polling(
-        allowed_updates=["message", "channel_post"],
+        allowed_updates=["message", "channel_post", "callback_query"],
         drop_pending_updates=True
     )
 
