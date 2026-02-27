@@ -1,30 +1,32 @@
 """
 TELEGRAM WELCOME BOT - BOLAPELANGI 2
+VERSI: FIXED UNTUK RAILWAY (Python 3.10+)
 Script untuk menyapa member baru yang join ke channel
 Created for: @bolapelangi2_bot
 """
 
+import os
 import logging
+import sys
 from telegram import Update, ChatMember
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram.constants import ParseMode
 
-# ==================== KONFIGURASI ====================
+# ==================== KONFIGURASI DARI ENVIRONMENT ====================
 
-# GANTI DENGAN TOKEN BOT KAMU!
-BOT_TOKEN = "8793227199:AAEXajy3RDO7SpMSCloj13Z4ubX3DXNvN4M"
-
-# GANTI DENGAN USERNAME CHANNEL KAMU!
-CHANNEL_USERNAME = "@bolapelangi2_channel"  # ISI DENGAN USERNAME CHANNEL ASLI!
-
-# ID CHANNEL (SUDAH BENAR)
-CHANNEL_ID = -1003573191693
+# Baca dari environment variable (RAILWAY)
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8793227199:AAEXajy3RDO7SpMSCloj13Z4ubX3DXNvN4M")
+CHANNEL_USERNAME = os.environ.get("CHANNEL_USERNAME", "@bolapelangi2_channel")
+CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1003573191693"))
 
 # ==================== KONFIGURASI LOGGING ====================
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    level=logging.INFO,
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
 )
 logger = logging.getLogger(__name__)
 
@@ -63,7 +65,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "*Kendala Teknis?*\n"
         "Hubungi WA Official: https://bopel2.link/wa"
     )
-    await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+    await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
 
 async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /promo command"""
@@ -130,24 +132,24 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
     chat = update.effective_chat
     
     # Log untuk debugging
-    logger.info(f"Message received in chat {chat.id} ({chat.title})")
+    logger.info(f"📨 Message received in chat {chat.id} ({chat.title})")
     
     # Cek apakah ini di channel yang kita targetkan
     if chat.id != CHANNEL_ID:
-        logger.info(f"Ignoring chat {chat.id} - not target channel")
+        logger.info(f"⏭️ Ignoring chat {chat.id} - not target channel")
         return
     
     # Cek apakah ada member baru
     if not message.new_chat_members:
         return
     
-    logger.info(f"🎉 New member detected in channel!")
+    logger.info(f"🎉 NEW MEMBER DETECTED IN CHANNEL!")
     
     # Loop untuk setiap member baru
     for new_member in message.new_chat_members:
         # Jangan sapa bot sendiri
         if new_member.is_bot:
-            logger.info(f"Ignoring bot: {new_member.first_name}")
+            logger.info(f"🤖 Ignoring bot: {new_member.first_name}")
             continue
         
         # Dapatkan informasi member
@@ -214,15 +216,25 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle errors"""
     logger.error(f"❌ Update {update} caused error {context.error}")
 
+async def post_init(application: Application):
+    """Fungsi yang dijalankan setelah bot initialized"""
+    logger.info("🤖 Bot initialized and ready to rock!")
+
 # ==================== MAIN FUNCTION ====================
 
 def main():
     """Main function to run the bot"""
     
-    # Buat aplikasi
-    application = Application.builder().token(BOT_TOKEN).build()
+    # Buat aplikasi dengan konfigurasi tambahan untuk stabilitas
+    application = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .post_init(post_init)
+        .concurrent_updates(True)  # Handle multiple updates concurrently
+        .build()
+    )
     
-    # Tambahkan command handlers (PAKAI COMMANDHANDLER, LEBIH SIMPEL)
+    # Tambahkan command handlers
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("promo", promo_command))
@@ -241,21 +253,32 @@ def main():
     application.add_error_handler(error_handler)
     
     # Start bot
-    print("=" * 50)
-    print("🤖 BOT BOLAPELANGI 2 WELCOME BOT")
-    print("=" * 50)
+    print("=" * 60)
+    print("🤖 BOT BOLAPELANGI 2 WELCOME BOT - RAILWAY EDITION")
+    print("=" * 60)
     print(f"✅ Token: {BOT_TOKEN[:10]}...{BOT_TOKEN[-5:]}")
     print(f"✅ Target Channel: {CHANNEL_USERNAME}")
     print(f"✅ Channel ID: {CHANNEL_ID}")
-    print("=" * 50)
-    print("📢 Status: RUNNING")
+    print("=" * 60)
+    print("📢 Status: RUNNING on RAILWAY")
     print("📢 Menunggu member baru...")
-    print("=" * 50)
-    print("Press Ctrl+C to stop")
-    print("=" * 50)
+    print("=" * 60)
+    print("📢 Logs akan muncul di bawah:")
+    print("=" * 60)
     
-    # Run bot dengan polling
-    application.run_polling(allowed_updates=["message", "channel_post", "chat_member"])
+    # Run bot dengan polling - flush output untuk Railway
+    sys.stdout.flush()
+    
+    try:
+        # Run bot dengan polling
+        application.run_polling(
+            allowed_updates=["message", "channel_post", "chat_member"],
+            drop_pending_updates=True,  # Abaikan update saat bot mati
+            close_loop=False  # Jangan close loop setelah stop
+        )
+    except Exception as e:
+        logger.error(f"❌ Fatal error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
