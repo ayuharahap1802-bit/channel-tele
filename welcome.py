@@ -102,7 +102,6 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Halo {user.first_name}! 👋\n\n"
         f"Selamat datang di *BOLAPELANGI 2 Bot*!\n\n"
         f"🤖 *Apa yang bisa saya bantu?*\n"
-        f"• Saya akan menyapa member baru di channel\n"
         f"• Info promo terbaru\n"
         f"• Cara klaim bonus\n\n"
         f"📌 *Link Penting:*\n"
