@@ -1,6 +1,6 @@
 """
 TELEGRAM WELCOME BOT - BOLAPELANGI 2
-VERSI: DENGAN BUTTON INTERAKTIF
+VERSI: DENGAN DEBUG WELCOME
 Fitur: Auto welcome + Button di /start
 Created for: @bolapelangi2_bot
 """
@@ -48,7 +48,7 @@ print(f"✅ BOT_TOKEN: {BOT_TOKEN[:10]}...{BOT_TOKEN[-5:]}")
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO,
+    level=logging.DEBUG,  # UBAH KE DEBUG UNTUK INFO LEBIH DETAIL
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger(__name__)
@@ -251,38 +251,68 @@ async def kontak_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
+# ==================== FUNGSI WELCOME DENGAN DEBUG ====================
+
 async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    Fungsi untuk menyapa member baru yang bergabung ke channel
+    Fungsi untuk menyapa member baru yang bergabung ke channel - VERSI DEBUG
     """
-    # Cek apakah ini pesan dari channel
+    # CEK 1: Apakah ini channel post?
+    logger.debug("=" * 50)
+    logger.debug("🔍 FUNGSI WELCOME DIPANGGIL")
+    
     if not update.channel_post:
+        logger.debug("❌ BUKAN CHANNEL POST - Keluar")
         return
+    
+    logger.debug("✅ INI ADALAH CHANNEL POST")
     
     message = update.channel_post
     chat = update.effective_chat
     
-    # Cek apakah ini channel target
+    # CEK 2: Informasi chat
+    logger.debug(f"📌 Chat ID: {chat.id}")
+    logger.debug(f"📌 Chat Title: {chat.title}")
+    logger.debug(f"📌 Chat Type: {chat.type}")
+    logger.debug(f"📌 Target ID: {CHANNEL_ID}")
+    
+    # CEK 3: Apakah chat.id sama dengan CHANNEL_ID?
     if chat.id != CHANNEL_ID:
+        logger.debug(f"❌ CHAT ID TIDAK SESUAI TARGET - Keluar")
+        logger.debug(f"   Chat ID: {chat.id} != Target: {CHANNEL_ID}")
         return
     
-    # Cek apakah ada member baru
+    logger.debug(f"✅ CHAT ID SESUAI TARGET")
+    
+    # CEK 4: Apakah ada member baru?
+    logger.debug(f"📌 new_chat_members: {message.new_chat_members}")
+    
     if not message.new_chat_members:
+        logger.debug("❌ TIDAK ADA MEMBER BARU - Keluar")
         return
     
-    logger.info(f"🎉 MEMBER BARU DETEKSI DI CHANNEL!")
+    logger.debug(f"✅ ADA MEMBER BARU: {len(message.new_chat_members)} orang")
     
-    # Loop untuk setiap member baru
-    for new_member in message.new_chat_members:
+    # CEK 5: Loop untuk setiap member
+    logger.info(f"🎉🎉🎉 MEMBER BARU DETEKSI DI CHANNEL! 🎉🎉🎉")
+    
+    for i, new_member in enumerate(message.new_chat_members):
+        logger.debug(f"--- Member {i+1} ---")
+        logger.debug(f"   ID: {new_member.id}")
+        logger.debug(f"   Nama: {new_member.first_name}")
+        logger.debug(f"   Username: {new_member.username}")
+        logger.debug(f"   Is Bot: {new_member.is_bot}")
+        
         # Jangan sapa bot sendiri
         if new_member.is_bot:
+            logger.debug("🤖 INI BOT - Dilewati")
             continue
         
         # Dapatkan informasi member
         user_id = new_member.id
         first_name = new_member.first_name or "Member"
         
-        logger.info(f"👤 Member baru: {first_name} (ID: {user_id})")
+        logger.info(f"👤 MEMBER BARU (MANUSIA): {first_name} (ID: {user_id})")
         
         # Buat mention
         mention = f"[{first_name}](tg://user?id={user_id})"
@@ -300,16 +330,20 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
             f"🔥 *GasPoll!* 🔥"
         )
         
+        logger.debug(f"📤 Mencoba kirim welcome ke channel...")
+        
         try:
-            await context.bot.send_message(
+            sent_message = await context.bot.send_message(
                 chat_id=chat.id,
                 text=welcome_text,
                 parse_mode=ParseMode.MARKDOWN,
                 disable_web_page_preview=True
             )
-            logger.info(f"✅ Welcome terkirim ke channel untuk {first_name}")
+            logger.info(f"✅✅✅ WELCOME TERKIRIM ke channel untuk {first_name} (Message ID: {sent_message.message_id})")
         except Exception as e:
-            logger.error(f"❌ Gagal kirim welcome: {e}")
+            logger.error(f"❌❌❌ GAGAL KIRIM WELCOME: {e}")
+            logger.error(f"   Tipe Error: {type(e).__name__}")
+            logger.error(f"   Detail: {str(e)}")
         
         # ===== KIRIM PESAN PRIVATE KE MEMBER =====
         try:
@@ -337,10 +371,35 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
             logger.info(f"✅ Private message terkirim ke {first_name}")
         except Exception as e:
             logger.info(f"⚠️ Tidak bisa kirim private ke {first_name}: {e}")
+    
+    logger.debug("=" * 50)
+
+# ==================== HANDLER UNTUK TEST ====================
+
+async def test_channel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Command untuk test kirim pesan ke channel"""
+    user = update.effective_user
+    logger.info(f"🧪 /test_channel dari {user.first_name}")
+    
+    try:
+        # Kirim pesan test ke channel
+        test_message = await context.bot.send_message(
+            chat_id=CHANNEL_ID,
+            text="🧪 *TEST BOT*\n\nBot aktif dan bisa mengirim pesan ke channel!",
+            parse_mode=ParseMode.MARKDOWN
+        )
+        await update.message.reply_text(f"✅ Pesan test terkirim ke channel! (Message ID: {test_message.message_id})")
+    except Exception as e:
+        await update.message.reply_text(f"❌ Gagal kirim test: {e}")
+        logger.error(f"❌ Gagal test kirim ke channel: {e}")
+
+# ==================== ERROR HANDLER ====================
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle errors"""
     logger.error(f"❌ ERROR: {context.error}")
+
+# ==================== POST INIT ====================
 
 async def post_init(application: Application):
     """Fungsi yang dijalankan setelah bot initialized"""
@@ -353,6 +412,19 @@ async def post_init(application: Application):
         bot_info = await application.bot.get_me()
         logger.info(f"✅ Bot: @{bot_info.username}")
         logger.info(f"✅ Channel ID: {CHANNEL_ID}")
+        
+        # Coba kirim pesan ke channel untuk test
+        try:
+            await application.bot.send_message(
+                chat_id=CHANNEL_ID,
+                text="🤖 *Bot Aktif*\n\nBot sudah online dan siap menyapa member baru!",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            logger.info("✅ Pesan startup terkirim ke channel")
+        except Exception as e:
+            logger.error(f"❌ Tidak bisa kirim pesan startup ke channel: {e}")
+            logger.error("   PASTIKAN BOT SUDAH JADI ADMIN CHANNEL!")
+        
         logger.info("✅ Button sudah terpasang di /start")
     except Exception as e:
         logger.error(f"❌ Gagal: {e}")
@@ -363,7 +435,7 @@ def main():
     """Main function to run the bot"""
     
     print("=" * 60)
-    print("🤖 BOT BOLAPELANGI 2 - DENGAN BUTTON")
+    print("🤖 BOT BOLAPELANGI 2 - DENGAN DEBUG WELCOME")
     print("=" * 60)
     
     # Validasi token
@@ -391,6 +463,7 @@ def main():
     application.add_handler(CommandHandler("promo", promo_command))
     application.add_handler(CommandHandler("aturan", aturan_command))
     application.add_handler(CommandHandler("kontak", kontak_command))
+    application.add_handler(CommandHandler("test_channel", test_channel_command))  # Command test baru
     
     # Callback handler untuk button
     application.add_handler(CallbackQueryHandler(button_callback))
@@ -410,6 +483,8 @@ def main():
     print("📢 BOT RUNNING di RAILWAY")
     print("📢 Fitur Button: AKTIF")
     print("📢 Button: LOGIN | DAFTAR | CLAIM EVENT PARLAY")
+    print("📢 DEBUG WELCOME: AKTIF - Cek logs untuk detail")
+    print("📢 Command baru: /test_channel - Test kirim ke channel")
     print("=" * 60)
     sys.stdout.flush()
     
