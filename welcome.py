@@ -66,19 +66,25 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"🔘 Button {data} diklik oleh {user.first_name}")
     
     if data == "login":
-        text = "🔐 *Link Login*\n\nKlik link di bawah untuk login:\n[🔐 LOGIN SEKARANG](https://shortq.info/bolapelangi2)"
-        await query.edit_message_text(text=text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False)
+        # Kirim pesan baru dengan link
+        text = "🔐 *Link Login*\n\nKlik link di bawah untuk login:\n[🔐 LOGIN SEKARANG](https://bopel2.link/login)"
+        await query.message.reply_text(text=text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False)
+        await query.delete_message()  # Hapus pesan sebelumnya
     
     elif data == "daftar":
-        text = "📝 *Link Daftar*\n\nKlik link di bawah untuk mendaftar:\n[📝 DAFTAR SEKARANG](https://rumahbopel2.com/_View/Register.aspx)"
-        await query.edit_message_text(text=text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False)
+        text = "📝 *Link Daftar*\n\nKlik link di bawah untuk mendaftar:\n[📝 DAFTAR SEKARANG](https://bopel2.link/daftar)"
+        await query.message.reply_text(text=text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False)
+        await query.delete_message()
     
     elif data == "claim":
-        text = "🎁 *Claim Event Parlay*\n\nKlik link di bawah untuk klaim bonus:\n[🎁 CLAIM BONUS](https://t.me/bolapelangi2_bot)"
-        await query.edit_message_text(text=text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False)
+        text = "🎁 *Claim Event Parlay*\n\nKlik link di bawah untuk klaim bonus:\n[🎁 CLAIM BONUS VIA WA](https://bopel2.link/wa)"
+        await query.message.reply_text(text=text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False)
+        await query.delete_message()
     
-    elif data == "back":
+    elif data == "menu_utama":
+        # Kembali ke menu utama
         await start_command(update, context)
+        await query.delete_message()
 
 # ==================== COMMAND HANDLERS ====================
 
@@ -99,18 +105,15 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Teks utama
     text = (
-        f"Halo {user.first_name}! 👋\n\n"
+        f"Halo *{user.first_name}*! 👋\n\n"
         f"Selamat datang di *BOLAPELANGI 2 Bot*!\n\n"
-        f"🤖 *Apa yang bisa saya bantu?*\n"
-        f"• Info promo terbaru\n"
-        f"• Cara klaim bonus\n\n"
-        f"📌 *Link Penting:*\n"
-        f"• [🔥 KLAIM BONUS VIA WA](https://bopel2.link/wa)\n"
-        f"• [📊 PREDIKSI & JADWAL](https://bopel2.vip/ChannelWA-Jadwal-Prediksi)\n\n"
+        f"🤖 *Menu Utama:*\n"
+        f"• Gunakan button di bawah untuk akses cepat\n"
+        f"• Ketik /help untuk bantuan\n\n"
         f"🔥 *GasPoll!* 🔥"
     )
     
-    # Membuat button
+    # Membuat button 3 sesuai permintaan
     keyboard = [
         [
             InlineKeyboardButton("🔐 LOGIN", callback_data='login'),
@@ -132,30 +135,40 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=reply_markup
         )
         if not update.callback_query:
-            logger.info(f"✅ Pesan dengan button terkirim ke {user.first_name}")
+            logger.info(f"✅ Menu utama dengan button terkirim ke {user.first_name}")
     except Exception as e:
         logger.error(f"❌ Gagal kirim pesan: {e}")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /help command"""
+    """Handle /help command - SIMPLE & RELEVAN"""
     user = update.effective_user
     logger.info(f"📚 /help dari {user.first_name}")
     
+    # Teks help yang simpel - hanya fitur yang relevan untuk personal chat
     text = (
-        "📚 *BANTUAN BOT BOLAPELANGI 2*\n\n"
-        "*Fitur Bot:*\n"
-        "• /start - Mulai bot & lihat menu\n"
-        "• /help - Bantuan ini\n"
-        "• /promo - Info promo terbaru\n"
-        "• /aturan - Syarat & ketentuan\n"
-        "• /kontak - Kontak official\n\n"
-        "*Untuk Admin:*\n"
-        "Bot akan otomatis menyapa member baru yang join ke channel\n\n"
-        "*Kendala Teknis?*\n"
-        "[💬 Hubungi WA Official](https://bopel2.link/wa)"
+        "📚 *BANTUAN BOT*\n\n"
+        "✨ *Perintah Tersedia:*\n"
+        "• /start - Tampilkan menu utama\n"
+        "• /help - Tampilkan bantuan ini\n\n"
+        "💬 *Butuh Bantuan?*\n"
+        "Hubungi WA Official:\n"
+        "[🟢 KLIK DI SINI](https://bopel2.link/wa)\n\n"
+        "⚽ *GasPoll!*"
     )
     
-    await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
+    # Buat button cepat ke WA
+    keyboard = [
+        [InlineKeyboardButton("📞 HUBUNGI WA OFFICIAL", url='https://bopel2.link/wa')],
+        [InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data='menu_utama')]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.message.reply_text(
+        text=text, 
+        parse_mode=ParseMode.MARKDOWN, 
+        disable_web_page_preview=True,
+        reply_markup=reply_markup
+    )
 
 async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /promo command"""
@@ -163,7 +176,7 @@ async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"🎁 /promo dari {user.first_name}")
     
     text = (
-        "🎁 *PROMO SPESIAL BOLAPELANGI 2* 🎁\n\n"
+        "🎁 *PROMO SPESIAL* 🎁\n\n"
         "⚽ *CASHBACK 100% MIX PARLAY*\n"
         "• Minimal Bet: Rp 10.000\n"
         "• Minimal 5 tim (TODAY)\n"
@@ -173,11 +186,19 @@ async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📌 *Syarat:*\n"
         "• Follow semua channel official\n"
         "• Add Telegram Bot: @bolapelangi2_bot\n"
-        "• [🟢 KLAIM VIA WA](https://bopel2.link/wa)\n\n"
-        "🚀 *GasPoll!*"
+        "• Klaim via WA\n\n"
+        "🟢 [KLAIM BONUS VIA WA](https://bopel2.link/wa)"
     )
     
-    await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
+    keyboard = [[InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data='menu_utama')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.message.reply_text(
+        text=text, 
+        parse_mode=ParseMode.MARKDOWN, 
+        disable_web_page_preview=True,
+        reply_markup=reply_markup
+    )
 
 async def aturan_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /aturan command"""
@@ -189,16 +210,19 @@ async def aturan_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "1. Bonus hanya bisa diklaim *1x sehari*\n"
         "2. Maksimal bonus *Rp 300.000/hari*\n"
         "3. Tidak boleh ada *kesamaan IP*\n"
-        "4. Tidak boleh *safety bet* atau kecurangan\n"
+        "4. Tidak boleh *safety bet*\n"
         "5. Keputusan admin *mutlak*\n\n"
-        "⚠️ Jika ketahuan curang, bonus *HANGUS*!\n\n"
-        "✅ *Cara Klaim:*\n"
-        "• Gabung semua channel official\n"
-        "• Add bot @bolapelangi2_bot\n"
-        "• [📱 KIRIM BUKTI KE WA](https://bopel2.link/wa)"
+        "⚠️ Jika ketahuan curang, bonus *HANGUS*!"
     )
     
-    await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
+    keyboard = [[InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data='menu_utama')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.message.reply_text(
+        text=text, 
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=reply_markup
+    )
 
 async def kontak_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /kontak command"""
@@ -206,21 +230,26 @@ async def kontak_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"📞 /kontak dari {user.first_name}")
     
     text = (
-        "📞 *KONTAK OFFICIAL BOLAPELANGI 2*\n\n"
-        "🟢 *WA Official (Klaim Bonus):*\n"
-        "[👉 KLIK DISINI](https://bopel2.link/wa)\n\n"
+        "📞 *KONTAK OFFICIAL*\n\n"
+        "🟢 *WA Official:*\n"
+        "[👉 KLIK DI SINI](https://bopel2.link/wa)\n\n"
         "📢 *Channel WhatsApp:*\n"
-        "[👉 JOIN VIA LINK](https://bopel2.vip/Channel-Whatsapp)\n\n"
+        "[👉 JOIN](https://bopel2.vip/Channel-Whatsapp)\n\n"
         "📢 *Channel Telegram:*\n"
-        "[👉 JOIN VIA LINK](https://bopel2.vip/Channel-Telegram)\n\n"
-        "🤖 *Bot Telegram:*\n"
-        "@bolapelangi2_bot\n\n"
+        "[👉 JOIN](https://bopel2.vip/Channel-Telegram)\n\n"
         "📈 *Prediksi & Jadwal:*\n"
-        "[👉 CEK DI SINI](https://bopel2.vip/ChannelWA-Jadwal-Prediksi)\n\n"
-        "🔥 *Follow semua biar gak ketinggalan info!*"
+        "[👉 CEK](https://bopel2.vip/ChannelWA-Jadwal-Prediksi)"
     )
     
-    await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
+    keyboard = [[InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data='menu_utama')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.message.reply_text(
+        text=text, 
+        parse_mode=ParseMode.MARKDOWN, 
+        disable_web_page_preview=True,
+        reply_markup=reply_markup
+    )
 
 async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -263,12 +292,11 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
             f"🎉 *SELAMAT DATANG* 🎉\n\n"
             f"Halo {mention}!\n"
             f"Selamat bergabung di *BOLAPELANGI 2 Official Channel*!\n\n"
-            f"📌 *Link Penting (Klik Langsung):*\n"
+            f"📌 *Link Penting:*\n"
             f"• [🤖 BOT OFFICIAL](https://t.me/bolapelangi2_bot)\n"
             f"• [🟢 WA KLAIM BONUS](https://bopel2.link/wa)\n"
             f"• [📢 CHANNEL WA](https://bopel2.vip/Channel-Whatsapp)\n"
-            f"• [📢 CHANNEL TG](https://bopel2.vip/Channel-Telegram)\n"
-            f"• [📊 PREDIKSI JITU](https://bopel2.vip/ChannelWA-Jadwal-Prediksi)\n\n"
+            f"• [📢 CHANNEL TG](https://bopel2.vip/Channel-Telegram)\n\n"
             f"🔥 *GasPoll!* 🔥"
         )
         
@@ -294,12 +322,10 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 f"• 5 tim TODAY\n"
                 f"• Odds 1.80\n"
                 f"• Max bonus Rp 300.000/hari\n\n"
-                f"📱 *Link Penting (Klik Langsung):*\n"
+                f"📱 *Link Penting:*\n"
                 f"• [🔥 KLAIM BONUS VIA WA](https://bopel2.link/wa)\n"
                 f"• [📊 PREDIKSI JITU](https://bopel2.vip/ChannelWA-Jadwal-Prediksi)\n"
-                f"• [📢 CHANNEL WHATSAPP](https://bopel2.vip/Channel-Whatsapp)\n"
-                f"• [📢 CHANNEL TELEGRAM](https://bopel2.vip/Channel-Telegram)\n\n"
-                f"Jangan lupa follow semua channel official ya Bosku!\n\n"
+                f"• [📢 CHANNEL WHATSAPP](https://bopel2.vip/Channel-Whatsapp)\n\n"
                 f"🚀 *GasPoll terus!*"
             )
             
