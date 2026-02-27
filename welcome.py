@@ -1,23 +1,27 @@
 """
 TELEGRAM WELCOME BOT - BOLAPELANGI 2
-VERSI: WEBHOOK UNTUK RAILWAY
+VERSI: POLLING UNTUK TERMINAL/LOKAL
+Fitur: Auto welcome saat ada member baru join channel
+Created for: @bolapelangi2_bot
 """
 
 import os
 import logging
 import sys
-from flask import Flask, request
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram.constants import ParseMode
 
 # ==================== KONFIGURASI ====================
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "8793227199:AAEXajy3RDO7SpMSCloj13Z4ubX3DXNvN4M")
-CHANNEL_USERNAME = os.environ.get("CHANNEL_USERNAME", "@bolapelangi2_channel")
-CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1003573191693"))
-PORT = int(os.environ.get("PORT", 8080))
-RAILWAY_PUBLIC_URL = os.environ.get("RAILWAY_PUBLIC_URL", "")
+# Token bot dari BotFather
+BOT_TOKEN = "8793227199:AAEXajy3RDO7SpMSCloj13Z4ubX3DXNvN4M"
+
+# Username channel (ganti dengan username channel Anda)
+CHANNEL_USERNAME = "@bolapelangi2_channel"
+
+# ID Channel (dapatkan dengan bot @getidsbot)
+CHANNEL_ID = -1003573191693
 
 # ==================== KONFIGURASI LOGGING ====================
 
@@ -27,11 +31,6 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger(__name__)
-
-# ==================== INIT BOT ====================
-
-# Buat aplikasi Telegram
-application = Application.builder().token(BOT_TOKEN).build()
 
 # ==================== COMMAND HANDLERS ====================
 
@@ -124,29 +123,49 @@ async def kontak_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
 
 async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Sapa member baru di channel"""
+    """
+    Fungsi untuk menyapa member baru yang bergabung ke channel
+    """
+    # Cek apakah ini pesan dari channel
     if not update.channel_post:
         return
     
     message = update.channel_post
     chat = update.effective_chat
     
+    # Log untuk debugging
+    logger.info(f"📨 Pesan diterima dari chat {chat.id} ({chat.title})")
+    
+    # Cek apakah ini channel target
     if chat.id != CHANNEL_ID:
+        logger.info(f"⏭️ Bukan channel target ({chat.id} != {CHANNEL_ID})")
         return
     
+    # Cek apakah ada member baru
     if not message.new_chat_members:
+        logger.info("ℹ️ Tidak ada member baru dalam pesan ini")
         return
     
-    logger.info(f"🎉 New member detected in channel!")
+    logger.info(f"🎉 MEMBER BARU DETEKSI DI CHANNEL!")
     
+    # Loop untuk setiap member baru
     for new_member in message.new_chat_members:
+        # Jangan sapa bot sendiri
         if new_member.is_bot:
+            logger.info(f"🤖 Mengabaikan bot: {new_member.first_name}")
             continue
         
+        # Dapatkan informasi member
         user_id = new_member.id
         first_name = new_member.first_name or "Member"
+        username = f"@{new_member.username}" if new_member.username else first_name
         
+        logger.info(f"👤 Member baru: {first_name} (ID: {user_id})")
+        
+        # Buat mention (format untuk Markdown)
         mention = f"[{first_name}](tg://user?id={user_id})"
+        
+        # ===== KIRIM WELCOME DI CHANNEL =====
         welcome_text = (
             f"🎉 *SELAMAT DATANG* 🎉\n\n"
             f"Halo {mention}!\n"
@@ -160,111 +179,88 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
         
         try:
             await context.bot.send_message(
-                chat_id=chat.id,
+                chat_id=chat.id,  # Kirim ke channel
                 text=welcome_text,
                 parse_mode=ParseMode.MARKDOWN,
                 disable_web_page_preview=True
             )
-            logger.info(f"✅ Welcome sent to {first_name}")
+            logger.info(f"✅ Pesan welcome terkirim ke channel untuk {first_name}")
         except Exception as e:
-            logger.error(f"❌ Failed: {e}")
+            logger.error(f"❌ Gagal kirim pesan ke channel: {e}")
         
+        # ===== KIRIM PESAN PRIVATE KE MEMBER =====
         try:
             private_text = (
-                f"Halo {first_name}!\n\n"
+                f"Halo {first_name}! 👋\n\n"
                 f"Terima kasih sudah bergabung dengan *BOLAPELANGI 2*! 🎉\n\n"
+                f"Kami punya *PROMO SPESIAL* untuk member baru:\n"
                 f"⚽ *CASHBACK 100% MIX PARLAY*\n"
                 f"• Modal Rp 10.000\n"
                 f"• 5 tim TODAY\n"
                 f"• Odds 1.80\n"
-                f"• Max bonus Rp 300.000\n\n"
-                f"📱 *Link:*\n"
-                f"Klaim: https://bopel2.link/wa\n"
-                f"Prediksi: https://bopel2.vip/ChannelWA-Jadwal-Prediksi\n\n"
-                f"🚀 GasPoll!"
+                f"• Max bonus Rp 300.000/hari\n\n"
+                f"📱 *Link Penting:*\n"
+                f"• Klaim Bonus: https://bopel2.link/wa\n"
+                f"• Prediksi Jitu: https://bopel2.vip/ChannelWA-Jadwal-Prediksi\n\n"
+                f"GasPoll terus Bosku! 🚀"
             )
+            
             await context.bot.send_message(
-                chat_id=user_id,
+                chat_id=user_id,  # Kirim ke personal chat
                 text=private_text,
                 parse_mode=ParseMode.MARKDOWN
             )
+            logger.info(f"✅ Pesan private terkirim ke {first_name}")
         except Exception as e:
-            logger.info(f"⚠️ Cannot send private: {e}")
+            logger.info(f"⚠️ Tidak bisa kirim pesan private ke {first_name}: {e}")
+            # Ini normal jika user belum pernah chat dengan bot
 
-# ==================== FLASK APP UNTUK WEBHOOK ====================
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle errors"""
+    logger.error(f"❌ ERROR: Update {update} caused error {context.error}")
 
-# Register handlers
-application.add_handler(CommandHandler("start", start_command))
-application.add_handler(CommandHandler("help", help_command))
-application.add_handler(CommandHandler("promo", promo_command))
-application.add_handler(CommandHandler("aturan", aturan_command))
-application.add_handler(CommandHandler("kontak", kontak_command))
-application.add_handler(
-    MessageHandler(
-        filters.Chat(chat_id=CHANNEL_ID) & filters.StatusUpdate.NEW_CHAT_MEMBERS,
-        welcome_new_member
-    )
-)
+# ==================== MAIN FUNCTION ====================
 
-# Flask app
-app = Flask(__name__)
-
-@app.route("/")
-def index():
-    return "Bot is running!", 200
-
-@app.route(f"/{BOT_TOKEN}", methods=["POST"])
-async def webhook():
-    """Handle Telegram webhook"""
-    json_data = request.get_json(force=True)
-    update = Update.de_json(json_data, application.bot)
-    await application.process_update(update)
-    return "OK", 200
-
-@app.route("/setwebhook", methods=["GET"])
-def set_webhook():
-    """Set webhook URL"""
-    if not RAILWAY_PUBLIC_URL:
-        return "RAILWAY_PUBLIC_URL not set", 500
+def main():
+    """Main function to run the bot"""
     
-    webhook_url = f"{RAILWAY_PUBLIC_URL}/{BOT_TOKEN}"
-    success = application.bot.set_webhook(url=webhook_url)
-    if success:
-        return f"Webhook set to {webhook_url}", 200
-    return "Failed to set webhook", 500
-
-# ==================== MAIN ====================
-
-if __name__ == "__main__":
+    # Buat aplikasi
+    application = Application.builder().token(BOT_TOKEN).build()
+    
+    # Tambahkan command handlers
+    application.add_handler(CommandHandler("start", start_command))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("promo", promo_command))
+    application.add_handler(CommandHandler("aturan", aturan_command))
+    application.add_handler(CommandHandler("kontak", kontak_command))
+    
+    # Handler untuk welcome message (via channel post)
+    # Filter khusus: hanya dari channel ID tertentu dan event new chat members
+    application.add_handler(
+        MessageHandler(
+            filters.Chat(chat_id=CHANNEL_ID) & filters.StatusUpdate.NEW_CHAT_MEMBERS,
+            welcome_new_member
+        )
+    )
+    
+    # Error handler
+    application.add_error_handler(error_handler)
+    
+    # Tampilkan informasi bot
     print("=" * 60)
-    print("🤖 BOT BOLAPELANGI 2 - WEBHOOK MODE")
+    print("🤖 BOT BOLAPELANGI 2 WELCOME BOT")
     print("=" * 60)
     print(f"✅ Token: {BOT_TOKEN[:10]}...{BOT_TOKEN[-5:]}")
-    print(f"✅ Channel: {CHANNEL_USERNAME}")
-    print(f"✅ Port: {PORT}")
+    print(f"✅ Channel Target: {CHANNEL_USERNAME}")
+    print(f"✅ Channel ID: {CHANNEL_ID}")
+    print("=" * 60)
+    print("📢 Status: RUNNING (POLLING MODE)")
+    print("📢 Bot siap menyapa member baru di channel")
+    print("📢 Tekan Ctrl+C untuk menghentikan bot")
     print("=" * 60)
     
-    # Hapus webhook lama kalau ada
-    import asyncio
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    
-    bot = application.bot
-    loop.run_until_complete(bot.delete_webhook())
-    
-    # Set webhook
-    if RAILWAY_PUBLIC_URL:
-        webhook_url = f"{RAILWAY_PUBLIC_URL}/{BOT_TOKEN}"
-        loop.run_until_complete(bot.set_webhook(url=webhook_url))
-        print(f"✅ Webhook set to: {webhook_url}")
-    else:
-        print("⚠️ RAILWAY_PUBLIC_URL not set. Set manually later.")
-        print("   Go to: /setwebhook")
-    
-    print("=" * 60)
-    print("📢 Running Flask server...")
-    print("=" * 60)
-    
-    # Run Flask
-    from waitress import serve
-    serve(app, host="0.0.0.0", port=PORT)
+    # Jalankan bot dengan polling
+    application.run_polling(allowed_updates=["message", "channel_post"])
+
+if __name__ == "__main__":
+    main()
