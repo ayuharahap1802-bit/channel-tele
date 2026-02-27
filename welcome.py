@@ -17,7 +17,7 @@ from telegram.constants import ParseMode
 # Baca dari environment variable Railway
 BOT_TOKEN = os.environ.get("8793227199:AAEXajy3RDO7SpMSCloj13Z4ubX3DXNvN4M")
 CHANNEL_USERNAME = os.environ.get("@bolapelangi2_channel")
-CHANNEL_ID = int(os.environ.get("-1003573191693"))
+CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1003573191693"))
 
 # ==================== KONFIGURASI LOGGING ====================
 
