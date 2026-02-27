@@ -1,6 +1,8 @@
 """
 TELEGRAM WELCOME BOT - BOLAPELANGI 2
-VERSI: DEBUG - UNTUK CEK KENAPA BOT TIDAK RESPON
+VERSI: LINK KLIKABLE - UNTUK RAILWAY
+Fitur: Auto welcome dengan link yang bisa diklik
+Created for: @bolapelangi2_bot
 """
 
 import os
@@ -13,15 +15,15 @@ from telegram.constants import ParseMode
 # ==================== KONFIGURASI DARI ENVIRONMENT ====================
 
 print("=" * 60)
-print("🔍 DEBUG MODE: MEMULAI BOT...")
+print("🔍 MEMULAI BOT BOLAPELANGI 2...")
 print("=" * 60)
 
 # Baca dari environment variable Railway
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHANNEL_ID_STR = os.environ.get("CHANNEL_ID")
 
-print(f"🔍 BOT_TOKEN dari env: {'ADA' if BOT_TOKEN else 'TIDAK ADA'}")
-print(f"🔍 CHANNEL_ID dari env: {CHANNEL_ID_STR}")
+print(f"🔍 BOT_TOKEN: {'ADA' if BOT_TOKEN else 'TIDAK ADA'}")
+print(f"🔍 CHANNEL_ID: {CHANNEL_ID_STR}")
 
 # Fallback ke default
 if not BOT_TOKEN:
@@ -46,7 +48,7 @@ print(f"✅ BOT_TOKEN: {BOT_TOKEN[:10]}...{BOT_TOKEN[-5:]}")
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.DEBUG,  # UBAH KE DEBUG UNTUK LIHAT SEMUA
+    level=logging.INFO,
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger(__name__)
@@ -55,29 +57,9 @@ logger = logging.getLogger(__name__)
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /start command"""
-    logger.info("=" * 40)
-    logger.info("🚀 START COMMAND DIPANGGIL!")
-    logger.info("=" * 40)
-    
-    # Debug info
     user = update.effective_user
-    chat = update.effective_chat
+    logger.info(f"🚀 /start dari {user.first_name} (ID: {user.id})")
     
-    logger.info(f"User ID: {user.id}")
-    logger.info(f"User First Name: {user.first_name}")
-    logger.info(f"User Username: {user.username}")
-    logger.info(f"Chat ID: {chat.id}")
-    logger.info(f"Chat Type: {chat.type}")
-    
-    # Coba kirim pesan sederhana dulu
-    try:
-        sent_message = await update.message.reply_text("✅ Bot merespon!")
-        logger.info(f"Pesan terkirim: {sent_message.message_id}")
-    except Exception as e:
-        logger.error(f"GAGAL KIRIM PESAN: {e}")
-        return
-    
-    # Kirim pesan lengkap
     text = (
         f"Halo {user.first_name}! 👋\n\n"
         f"Selamat datang di *BOLAPELANGI 2 Bot*!\n\n"
@@ -85,27 +67,21 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"• Saya akan menyapa member baru di channel\n"
         f"• Info promo terbaru\n"
         f"• Cara klaim bonus\n\n"
-        f"📌 *Link Penting:*\n"
-        f"• Klaim Bonus: https://bopel2.link/wa\n"
-        f"• Prediksi: https://bopel2.vip/ChannelWA-Jadwal-Prediksi\n\n"
+        f"📌 *Link Penting (Klik Langsung):*\n"
+        f"• [🔥 KLAIM BONUS VIA WA](https://bopel2.link/wa)\n"
+        f"• [📊 PREDIKSI & JADWAL](https://bopel2.vip/ChannelWA-Jadwal-Prediksi)\n"
+        f"• [📢 CHANNEL WHATSAPP](https://bopel2.vip/Channel-Whatsapp)\n"
+        f"• [📢 CHANNEL TELEGRAM](https://bopel2.vip/Channel-Telegram)\n\n"
         f"🔥 *GasPoll!* 🔥"
     )
     
-    try:
-        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-        logger.info("✅ Pesan lengkap terkirim")
-    except Exception as e:
-        logger.error(f"❌ Gagal kirim pesan lengkap: {e}")
-        # Coba kirim tanpa markdown
-        try:
-            await update.message.reply_text(text.replace("*", ""))
-            logger.info("✅ Pesan tanpa markdown terkirim")
-        except Exception as e2:
-            logger.error(f"❌ Gagal total: {e2}")
+    await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False)
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /help command"""
-    logger.info("📚 HELP COMMAND dipanggil")
+    user = update.effective_user
+    logger.info(f"📚 /help dari {user.first_name}")
+    
     text = (
         "📚 *BANTUAN BOT BOLAPELANGI 2*\n\n"
         "*Fitur Bot:*\n"
@@ -117,13 +93,16 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "*Untuk Admin:*\n"
         "Bot akan otomatis menyapa member baru yang join ke channel\n\n"
         "*Kendala Teknis?*\n"
-        "Hubungi WA Official: https://bopel2.link/wa"
+        "[💬 Hubungi WA Official](https://bopel2.link/wa)"
     )
+    
     await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
 
 async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /promo command"""
-    logger.info("🎁 PROMO COMMAND dipanggil")
+    user = update.effective_user
+    logger.info(f"🎁 /promo dari {user.first_name}")
+    
     text = (
         "🎁 *PROMO SPESIAL BOLAPELANGI 2* 🎁\n\n"
         "⚽ *CASHBACK 100% MIX PARLAY*\n"
@@ -135,14 +114,17 @@ async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📌 *Syarat:*\n"
         "• Follow semua channel official\n"
         "• Add Telegram Bot: @bolapelangi2_bot\n"
-        "• Klaim via WA: https://bopel2.link/wa\n\n"
+        "• [🟢 KLAIM VIA WA](https://bopel2.link/wa)\n\n"
         "🚀 *GasPoll!*"
     )
+    
     await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
 
 async def aturan_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /aturan command"""
-    logger.info("📋 ATURAN COMMAND dipanggil")
+    user = update.effective_user
+    logger.info(f"📋 /aturan dari {user.first_name}")
+    
     text = (
         "📋 *SYARAT & KETENTUAN*\n\n"
         "1. Bonus hanya bisa diklaim *1x sehari*\n"
@@ -154,102 +136,141 @@ async def aturan_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "✅ *Cara Klaim:*\n"
         "• Gabung semua channel official\n"
         "• Add bot @bolapelangi2_bot\n"
-        "• Kirim bukti ke WA: https://bopel2.link/wa"
+        "• [📱 KIRIM BUKTI KE WA](https://bopel2.link/wa)"
     )
+    
     await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
 
 async def kontak_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /kontak command"""
-    logger.info("📞 KONTAK COMMAND dipanggil")
+    user = update.effective_user
+    logger.info(f"📞 /kontak dari {user.first_name}")
+    
     text = (
         "📞 *KONTAK OFFICIAL BOLAPELANGI 2*\n\n"
         "🟢 *WA Official (Klaim Bonus):*\n"
-        "https://bopel2.link/wa\n\n"
+        "[👉 KLIK DISINI](https://bopel2.link/wa)\n\n"
         "📢 *Channel WhatsApp:*\n"
-        "https://bopel2.vip/Channel-Whatsapp\n\n"
+        "[👉 JOIN VIA LINK](https://bopel2.vip/Channel-Whatsapp)\n\n"
         "📢 *Channel Telegram:*\n"
-        "https://bopel2.vip/Channel-Telegram\n\n"
+        "[👉 JOIN VIA LINK](https://bopel2.vip/Channel-Telegram)\n\n"
         "🤖 *Bot Telegram:*\n"
         "@bolapelangi2_bot\n\n"
         "📈 *Prediksi & Jadwal:*\n"
-        "https://bopel2.vip/ChannelWA-Jadwal-Prediksi\n\n"
+        "[👉 CEK DI SINI](https://bopel2.vip/ChannelWA-Jadwal-Prediksi)\n\n"
         "🔥 *Follow semua biar gak ketinggalan info!*"
     )
+    
     await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
 
 async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Sapa member baru di channel"""
-    logger.info("👋 WELCOME FUNCTION DIPANGGIL")
-    
+    """
+    Fungsi untuk menyapa member baru yang bergabung ke channel
+    """
+    # Cek apakah ini pesan dari channel
     if not update.channel_post:
-        logger.info("❌ Bukan channel post")
         return
     
     message = update.channel_post
     chat = update.effective_chat
     
-    logger.info(f"📨 Dari chat: {chat.id} - {chat.title}")
-    logger.info(f"📨 Channel ID target: {CHANNEL_ID}")
-    
+    # Cek apakah ini channel target
     if chat.id != CHANNEL_ID:
-        logger.info(f"⏭️ Bukan channel target")
         return
     
+    # Cek apakah ada member baru
     if not message.new_chat_members:
-        logger.info("ℹ️ Tidak ada member baru")
         return
     
-    logger.info(f"🎉 ADA {len(message.new_chat_members)} MEMBER BARU!")
+    logger.info(f"🎉 MEMBER BARU DETEKSI DI CHANNEL!")
     
+    # Loop untuk setiap member baru
     for new_member in message.new_chat_members:
+        # Jangan sapa bot sendiri
         if new_member.is_bot:
-            logger.info(f"🤖 Bot: {new_member.first_name}")
             continue
         
-        logger.info(f"👤 Member: {new_member.first_name} (ID: {new_member.id})")
+        # Dapatkan informasi member
+        user_id = new_member.id
+        first_name = new_member.first_name or "Member"
         
-        # Sisanya sama seperti sebelumnya...
-
-async def debug_all_updates(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handler untuk debug semua update"""
-    logger.info("=" * 50)
-    logger.info("🔍 UPDATE DITERIMA:")
-    logger.info(f"Update ID: {update.update_id}")
-    
-    if update.message:
-        logger.info(f"Type: MESSAGE")
-        logger.info(f"Text: {update.message.text}")
-        logger.info(f"From: {update.message.from_user.first_name} (ID: {update.message.from_user.id})")
-        logger.info(f"Chat: {update.message.chat.id} - {update.message.chat.type}")
-    
-    if update.channel_post:
-        logger.info(f"Type: CHANNEL POST")
-        logger.info(f"Chat: {update.channel_post.chat.id} - {update.channel_post.chat.title}")
-    
-    if update.my_chat_member:
-        logger.info(f"Type: MY_CHAT_MEMBER")
-    
-    logger.info("=" * 50)
+        logger.info(f"👤 Member baru: {first_name} (ID: {user_id})")
+        
+        # Buat mention
+        mention = f"[{first_name}](tg://user?id={user_id})"
+        
+        # ===== KIRIM WELCOME DI CHANNEL (DENGAN LINK KLIKABLE) =====
+        welcome_text = (
+            f"🎉 *SELAMAT DATANG* 🎉\n\n"
+            f"Halo {mention}!\n"
+            f"Selamat bergabung di *BOLAPELANGI 2 Official Channel*!\n\n"
+            f"📌 *Link Penting (Klik Langsung):*\n"
+            f"• [🤖 BOT OFFICIAL](https://t.me/bolapelangi2_bot)\n"
+            f"• [🟢 WA KLAIM BONUS](https://bopel2.link/wa)\n"
+            f"• [📢 CHANNEL WA](https://bopel2.vip/Channel-Whatsapp)\n"
+            f"• [📢 CHANNEL TG](https://bopel2.vip/Channel-Telegram)\n"
+            f"• [📊 PREDIKSI JITU](https://bopel2.vip/ChannelWA-Jadwal-Prediksi)\n\n"
+            f"🔥 *GasPoll!* 🔥"
+        )
+        
+        try:
+            await context.bot.send_message(
+                chat_id=chat.id,
+                text=welcome_text,
+                parse_mode=ParseMode.MARKDOWN,
+                disable_web_page_preview=True
+            )
+            logger.info(f"✅ Welcome terkirim ke channel untuk {first_name}")
+        except Exception as e:
+            logger.error(f"❌ Gagal kirim welcome: {e}")
+        
+        # ===== KIRIM PESAN PRIVATE KE MEMBER (DENGAN LINK KLIKABLE) =====
+        try:
+            private_text = (
+                f"Halo {first_name}! 👋\n\n"
+                f"Terima kasih sudah bergabung dengan *BOLAPELANGI 2*! 🎉\n\n"
+                f"⚽ *PROMO SPESIAL UNTUK MEMBER BARU*\n"
+                f"• *CASHBACK 100% MIX PARLAY*\n"
+                f"• Modal Rp 10.000\n"
+                f"• 5 tim TODAY\n"
+                f"• Odds 1.80\n"
+                f"• Max bonus Rp 300.000/hari\n\n"
+                f"📱 *Link Penting (Klik Langsung):*\n"
+                f"• [🔥 KLAIM BONUS VIA WA](https://bopel2.link/wa)\n"
+                f"• [📊 PREDIKSI JITU](https://bopel2.vip/ChannelWA-Jadwal-Prediksi)\n"
+                f"• [📢 CHANNEL WHATSAPP](https://bopel2.vip/Channel-Whatsapp)\n"
+                f"• [📢 CHANNEL TELEGRAM](https://bopel2.vip/Channel-Telegram)\n\n"
+                f"Jangan lupa follow semua channel official ya Bosku!\n\n"
+                f"🚀 *GasPoll terus!*"
+            )
+            
+            await context.bot.send_message(
+                chat_id=user_id,
+                text=private_text,
+                parse_mode=ParseMode.MARKDOWN
+            )
+            logger.info(f"✅ Private message terkirim ke {first_name}")
+        except Exception as e:
+            logger.info(f"⚠️ Tidak bisa kirim private ke {first_name}: {e}")
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle errors"""
     logger.error(f"❌ ERROR: {context.error}")
-    if update:
-        logger.error(f"Update: {update}")
 
 async def post_init(application: Application):
     """Fungsi yang dijalankan setelah bot initialized"""
     logger.info("=" * 50)
-    logger.info("🤖 BOT INITIALIZED - READY TO ROCK!")
+    logger.info("🤖 BOT BOLAPELANGI 2 READY!")
     logger.info("=" * 50)
     
-    # Cek koneksi ke Telegram
+    # Cek koneksi
     try:
         bot_info = await application.bot.get_me()
-        logger.info(f"✅ Bot Info: @{bot_info.username} (ID: {bot_info.id})")
-        logger.info(f"✅ Bot bisa menerima pesan!")
+        logger.info(f"✅ Bot: @{bot_info.username}")
+        logger.info(f"✅ Channel ID: {CHANNEL_ID}")
+        logger.info("✅ Semua link sudah dalam format klikable")
     except Exception as e:
-        logger.error(f"❌ Gagal get bot info: {e}")
+        logger.error(f"❌ Gagal: {e}")
 
 # ==================== MAIN FUNCTION ====================
 
@@ -257,19 +278,13 @@ def main():
     """Main function to run the bot"""
     
     print("=" * 60)
-    print("🚀 MEMULAI BOT DENGAN DEBUG MODE...")
+    print("🤖 BOT BOLAPELANGI 2 - LINK KLIKABLE VERSION")
     print("=" * 60)
     
     # Validasi token
-    if not BOT_TOKEN:
-        print("❌ ERROR: BOT_TOKEN tidak ada!")
+    if not BOT_TOKEN or len(BOT_TOKEN) < 40:
+        print("❌ ERROR: BOT_TOKEN tidak valid!")
         sys.exit(1)
-    
-    if len(BOT_TOKEN) < 40:
-        print(f"❌ ERROR: BOT_TOKEN terlalu pendek: {BOT_TOKEN}")
-        sys.exit(1)
-    
-    print(f"✅ BOT_TOKEN valid")
     
     # Buat aplikasi
     try:
@@ -282,11 +297,8 @@ def main():
         )
         print("✅ Application berhasil dibuat")
     except Exception as e:
-        print(f"❌ Gagal buat application: {e}")
+        print(f"❌ Gagal: {e}")
         sys.exit(1)
-    
-    # TAMBAHKAN DEBUG HANDLER UNTUK MELIHAT SEMUA UPDATE
-    application.add_handler(MessageHandler(filters.ALL, debug_all_updates), group=-1)
     
     # Command handlers
     application.add_handler(CommandHandler("start", start_command))
@@ -307,16 +319,15 @@ def main():
     application.add_error_handler(error_handler)
     
     print("=" * 60)
-    print("📢 BOT STARTED - WAITING FOR UPDATES...")
-    print("📢 Kirim /start ke bot di Telegram")
+    print("📢 BOT RUNNING di RAILWAY")
+    print("📢 Kirim /start untuk test link klikable")
     print("=" * 60)
     sys.stdout.flush()
     
     # Jalankan bot
     application.run_polling(
-        allowed_updates=["message", "channel_post", "chat_member"],
-        drop_pending_updates=True,
-        timeout=30
+        allowed_updates=["message", "channel_post"],
+        drop_pending_updates=True
     )
 
 if __name__ == "__main__":
