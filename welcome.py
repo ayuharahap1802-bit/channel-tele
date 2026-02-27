@@ -1,7 +1,7 @@
 """
 TELEGRAM WELCOME BOT - BOLAPELANGI 2
-VERSI: DENGAN DEBUG WELCOME
-Fitur: Auto welcome + Button di /start
+VERSI: FINAL UNTUK BOTFATHER
+Fitur: Auto welcome + Promo dengan gambar
 Created for: @bolapelangi2_bot
 """
 
@@ -48,10 +48,42 @@ print(f"✅ BOT_TOKEN: {BOT_TOKEN[:10]}...{BOT_TOKEN[-5:]}")
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.DEBUG,  # UBAH KE DEBUG UNTUK INFO LEBIH DETAIL
+    level=logging.INFO,
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger(__name__)
+
+# ==================== TEKS PROMO ====================
+
+PROMO_TEXT = """
+⚽ *PROMO GILA! CASHBACK 100% MIX PARLAY* ⚽
+*Satu Tim Meleset? Modal Kami Balikin Utuh!*
+
+📋 *SYARAT:*
+• Bet: Min Rp 10.000
+• Tim: Min 5 tim (TODAY)
+• Odds: Min 1.80/tim
+• Provider: Sport 1/2
+
+💡 *ATURAN:*
+• 1 tim Lose Full
+• Sisanya Win Full
+• Max Rp 300.000/hari
+
+⚠️ *WAJIB FOLLOW:*
+🤖 [BOT OFFICIAL](https://t.me/bolapelangi2_bot)
+📈 [PREDIKSI JITU](https://bopel2.vip/ChannelWA-Jadwal-Prediksi)
+📢 [CHANNEL WHATSAPP](https://bopel2.vip/Channel-Whatsapp)
+📢 [CHANNEL TELEGRAM](https://bopel2.vip/Channel-Telegram)
+🟢 [KLAIM BONUS](https://bopel2.link/wa)
+
+📌 *Catatan:* 1x/hari, no IP sama, no safety bet
+🚀 *GASPOLL TERUS BOSKU!*
+"""
+
+# ==================== PATH GAMBAR ====================
+# Ganti dengan URL gambar Anda (upload ke imgbb.com atau postimages.org)
+PROMO_IMAGE_URL = "https://i.ibb.co/your-image/promo-banner.jpg"  # GANTI DENGAN URL GAMBAR ANDA!
 
 # ==================== BUTTON HANDLERS ====================
 
@@ -66,67 +98,124 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"🔘 Button {data} diklik oleh {user.first_name}")
     
     if data == "login":
-        # Kirim pesan baru dengan link
-        text = "🔐 *Link Login*\n\nKlik link di bawah untuk login:\n[🔐 LOGIN SEKARANG](https://bopel2.link/login)"
-        await query.message.reply_text(text=text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False)
-        await query.delete_message()  # Hapus pesan sebelumnya
+        # Kirim link login
+        text = "🔐 *Link Login*\n\nKlik tombol di bawah untuk login:"
+        keyboard = [[InlineKeyboardButton("🔐 LOGIN SEKARANG", url="https://bopel2.link/login")]]
+        await query.message.reply_text(
+            text=text, 
+            parse_mode=ParseMode.MARKDOWN, 
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+        await query.delete_message()
     
     elif data == "daftar":
-        text = "📝 *Link Daftar*\n\nKlik link di bawah untuk mendaftar:\n[📝 DAFTAR SEKARANG](https://bopel2.link/daftar)"
-        await query.message.reply_text(text=text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False)
+        # Kirim link daftar
+        text = "📝 *Link Daftar*\n\nKlik tombol di bawah untuk mendaftar:"
+        keyboard = [[InlineKeyboardButton("📝 DAFTAR SEKARANG", url="https://bopel2.link/daftar")]]
+        await query.message.reply_text(
+            text=text, 
+            parse_mode=ParseMode.MARKDOWN, 
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
         await query.delete_message()
     
     elif data == "claim":
-        text = "🎁 *Claim Event Parlay*\n\nKlik link di bawah untuk klaim bonus:\n[🎁 CLAIM BONUS VIA WA](https://bopel2.link/wa)"
-        await query.message.reply_text(text=text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=False)
+        # Kirim link claim
+        text = "🎁 *Claim Event Parlay*\n\nKlik tombol di bawah untuk klaim bonus:"
+        keyboard = [[InlineKeyboardButton("🎁 CLAIM BONUS", url="https://bopel2.link/wa")]]
+        await query.message.reply_text(
+            text=text, 
+            parse_mode=ParseMode.MARKDOWN, 
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+        await query.delete_message()
+    
+    elif data == "promo":
+        # Tampilkan promo
+        await send_promo(query.message, context)
         await query.delete_message()
     
     elif data == "menu_utama":
         # Kembali ke menu utama
         await start_command(update, context)
-        await query.delete_message()
+
+# ==================== FUNGSI KIRIM PROMO ====================
+
+async def send_promo(message, context):
+    """Kirim promo dengan gambar"""
+    try:
+        # Buat button untuk link
+        keyboard = [
+            [InlineKeyboardButton("🤖 BOT OFFICIAL", url="https://t.me/bolapelangi2_bot")],
+            [InlineKeyboardButton("📈 PREDIKSI JITU", url="https://bopel2.vip/ChannelWA-Jadwal-Prediksi")],
+            [InlineKeyboardButton("📢 CHANNEL WA", url="https://bopel2.vip/Channel-Whatsapp")],
+            [InlineKeyboardButton("📢 CHANNEL TG", url="https://bopel2.vip/Channel-Telegram")],
+            [InlineKeyboardButton("🟢 KLAIM BONUS", url="https://bopel2.link/wa")],
+            [InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data="menu_utama")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        # Coba kirim dengan gambar
+        try:
+            await message.reply_photo(
+                photo=PROMO_IMAGE_URL,
+                caption=PROMO_TEXT,
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=reply_markup
+            )
+            logger.info("✅ Promo dengan gambar terkirim")
+        except Exception as e:
+            logger.warning(f"⚠️ Gagal kirim gambar: {e}, kirim teks saja")
+            # Fallback: kirim teks saja
+            await message.reply_text(
+                text=PROMO_TEXT,
+                parse_mode=ParseMode.MARKDOWN,
+                disable_web_page_preview=True,
+                reply_markup=reply_markup
+            )
+    except Exception as e:
+        logger.error(f"❌ Gagal kirim promo: {e}")
 
 # ==================== COMMAND HANDLERS ====================
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /start command dengan BUTTON"""
     
-    # Cek apakah ini callback query atau pesan biasa
     if update.callback_query:
         user = update.callback_query.from_user
-        message = update.callback_query.message
         send = update.callback_query.edit_message_text
         logger.info(f"🚀 /start (via button) dari {user.first_name}")
     else:
         user = update.effective_user
-        message = update.message
         send = update.message.reply_text
         logger.info(f"🚀 /start dari {user.first_name} (ID: {user.id})")
     
-    # Teks utama
     text = (
         f"Halo *{user.first_name}*! 👋\n\n"
         f"Selamat datang di *BOLAPELANGI 2 Bot*!\n\n"
         f"🤖 *Menu Utama:*\n"
         f"• Gunakan button di bawah untuk akses cepat\n"
+        f"• Klik button LIHAT PROMO untuk promo terbaru\n"
         f"• Ketik /help untuk bantuan\n\n"
         f"🔥 *GasPoll!* 🔥"
     )
     
-    # Membuat button 3 sesuai permintaan
+    # Button 3 sesuai permintaan + 1 button promo
     keyboard = [
         [
             InlineKeyboardButton("🔐 LOGIN", callback_data='login'),
             InlineKeyboardButton("📝 DAFTAR", callback_data='daftar'),
         ],
         [
-            InlineKeyboardButton("🎁 CLAIM EVENT PARLAY", callback_data='claim'),
+            InlineKeyboardButton("🎁 CLAIM EVENT", callback_data='claim'),
+        ],
+        [
+            InlineKeyboardButton("📢 LIHAT PROMO", callback_data='promo'),
         ]
     ]
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    # Kirim pesan dengan button
     try:
         await send(
             text=text,
@@ -135,20 +224,26 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=reply_markup
         )
         if not update.callback_query:
-            logger.info(f"✅ Menu utama dengan button terkirim ke {user.first_name}")
+            logger.info(f"✅ Menu utama terkirim ke {user.first_name}")
     except Exception as e:
         logger.error(f"❌ Gagal kirim pesan: {e}")
 
+async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /promo command - Tampilkan promo dengan gambar"""
+    user = update.effective_user
+    logger.info(f"🎁 /promo dari {user.first_name}")
+    await send_promo(update.message, context)
+
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /help command - SIMPLE & RELEVAN"""
+    """Handle /help command"""
     user = update.effective_user
     logger.info(f"📚 /help dari {user.first_name}")
     
-    # Teks help yang simpel - hanya fitur yang relevan untuk personal chat
     text = (
         "📚 *BANTUAN BOT*\n\n"
         "✨ *Perintah Tersedia:*\n"
         "• /start - Tampilkan menu utama\n"
+        "• /promo - Lihat promo terbaru\n"
         "• /help - Tampilkan bantuan ini\n\n"
         "💬 *Butuh Bantuan?*\n"
         "Hubungi WA Official:\n"
@@ -156,7 +251,6 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "⚽ *GasPoll!*"
     )
     
-    # Buat button cepat ke WA
     keyboard = [
         [InlineKeyboardButton("📞 HUBUNGI WA OFFICIAL", url='https://bopel2.link/wa')],
         [InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data='menu_utama')]
@@ -170,149 +264,40 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
-async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /promo command"""
-    user = update.effective_user
-    logger.info(f"🎁 /promo dari {user.first_name}")
-    
-    text = (
-        "🎁 *PROMO SPESIAL* 🎁\n\n"
-        "⚽ *CASHBACK 100% MIX PARLAY*\n"
-        "• Minimal Bet: Rp 10.000\n"
-        "• Minimal 5 tim (TODAY)\n"
-        "• Odds Minimal 1.80\n"
-        "• 1 tim Lose, sisanya Win Full\n"
-        "• Max Bonus: Rp 300.000/hari\n\n"
-        "📌 *Syarat:*\n"
-        "• Follow semua channel official\n"
-        "• Add Telegram Bot: @bolapelangi2_bot\n"
-        "• Klaim via WA\n\n"
-        "🟢 [KLAIM BONUS VIA WA](https://bopel2.link/wa)"
-    )
-    
-    keyboard = [[InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data='menu_utama')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await update.message.reply_text(
-        text=text, 
-        parse_mode=ParseMode.MARKDOWN, 
-        disable_web_page_preview=True,
-        reply_markup=reply_markup
-    )
-
-async def aturan_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /aturan command"""
-    user = update.effective_user
-    logger.info(f"📋 /aturan dari {user.first_name}")
-    
-    text = (
-        "📋 *SYARAT & KETENTUAN*\n\n"
-        "1. Bonus hanya bisa diklaim *1x sehari*\n"
-        "2. Maksimal bonus *Rp 300.000/hari*\n"
-        "3. Tidak boleh ada *kesamaan IP*\n"
-        "4. Tidak boleh *safety bet*\n"
-        "5. Keputusan admin *mutlak*\n\n"
-        "⚠️ Jika ketahuan curang, bonus *HANGUS*!"
-    )
-    
-    keyboard = [[InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data='menu_utama')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await update.message.reply_text(
-        text=text, 
-        parse_mode=ParseMode.MARKDOWN,
-        reply_markup=reply_markup
-    )
-
-async def kontak_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /kontak command"""
-    user = update.effective_user
-    logger.info(f"📞 /kontak dari {user.first_name}")
-    
-    text = (
-        "📞 *KONTAK OFFICIAL*\n\n"
-        "🟢 *WA Official:*\n"
-        "[👉 KLIK DI SINI](https://bopel2.link/wa)\n\n"
-        "📢 *Channel WhatsApp:*\n"
-        "[👉 JOIN](https://bopel2.vip/Channel-Whatsapp)\n\n"
-        "📢 *Channel Telegram:*\n"
-        "[👉 JOIN](https://bopel2.vip/Channel-Telegram)\n\n"
-        "📈 *Prediksi & Jadwal:*\n"
-        "[👉 CEK](https://bopel2.vip/ChannelWA-Jadwal-Prediksi)"
-    )
-    
-    keyboard = [[InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data='menu_utama')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await update.message.reply_text(
-        text=text, 
-        parse_mode=ParseMode.MARKDOWN, 
-        disable_web_page_preview=True,
-        reply_markup=reply_markup
-    )
-
-# ==================== FUNGSI WELCOME DENGAN DEBUG ====================
+# ==================== WELCOME NEW MEMBER ====================
 
 async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    Fungsi untuk menyapa member baru yang bergabung ke channel - VERSI DEBUG
+    Fungsi untuk menyapa member baru yang bergabung ke channel
     """
-    # CEK 1: Apakah ini channel post?
-    logger.debug("=" * 50)
-    logger.debug("🔍 FUNGSI WELCOME DIPANGGIL")
-    
+    # Cek apakah ini pesan dari channel
     if not update.channel_post:
-        logger.debug("❌ BUKAN CHANNEL POST - Keluar")
         return
-    
-    logger.debug("✅ INI ADALAH CHANNEL POST")
     
     message = update.channel_post
     chat = update.effective_chat
     
-    # CEK 2: Informasi chat
-    logger.debug(f"📌 Chat ID: {chat.id}")
-    logger.debug(f"📌 Chat Title: {chat.title}")
-    logger.debug(f"📌 Chat Type: {chat.type}")
-    logger.debug(f"📌 Target ID: {CHANNEL_ID}")
-    
-    # CEK 3: Apakah chat.id sama dengan CHANNEL_ID?
+    # Cek apakah ini channel target
     if chat.id != CHANNEL_ID:
-        logger.debug(f"❌ CHAT ID TIDAK SESUAI TARGET - Keluar")
-        logger.debug(f"   Chat ID: {chat.id} != Target: {CHANNEL_ID}")
         return
     
-    logger.debug(f"✅ CHAT ID SESUAI TARGET")
-    
-    # CEK 4: Apakah ada member baru?
-    logger.debug(f"📌 new_chat_members: {message.new_chat_members}")
-    
+    # Cek apakah ada member baru
     if not message.new_chat_members:
-        logger.debug("❌ TIDAK ADA MEMBER BARU - Keluar")
         return
     
-    logger.debug(f"✅ ADA MEMBER BARU: {len(message.new_chat_members)} orang")
+    logger.info(f"🎉 MEMBER BARU DETEKSI DI CHANNEL!")
     
-    # CEK 5: Loop untuk setiap member
-    logger.info(f"🎉🎉🎉 MEMBER BARU DETEKSI DI CHANNEL! 🎉🎉🎉")
-    
-    for i, new_member in enumerate(message.new_chat_members):
-        logger.debug(f"--- Member {i+1} ---")
-        logger.debug(f"   ID: {new_member.id}")
-        logger.debug(f"   Nama: {new_member.first_name}")
-        logger.debug(f"   Username: {new_member.username}")
-        logger.debug(f"   Is Bot: {new_member.is_bot}")
-        
+    # Loop untuk setiap member baru
+    for new_member in message.new_chat_members:
         # Jangan sapa bot sendiri
         if new_member.is_bot:
-            logger.debug("🤖 INI BOT - Dilewati")
             continue
         
         # Dapatkan informasi member
         user_id = new_member.id
         first_name = new_member.first_name or "Member"
         
-        logger.info(f"👤 MEMBER BARU (MANUSIA): {first_name} (ID: {user_id})")
+        logger.info(f"👤 Member baru: {first_name} (ID: {user_id})")
         
         # Buat mention
         mention = f"[{first_name}](tg://user?id={user_id})"
@@ -330,51 +315,18 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
             f"🔥 *GasPoll!* 🔥"
         )
         
-        logger.debug(f"📤 Mencoba kirim welcome ke channel...")
-        
         try:
-            sent_message = await context.bot.send_message(
+            await context.bot.send_message(
                 chat_id=chat.id,
                 text=welcome_text,
                 parse_mode=ParseMode.MARKDOWN,
                 disable_web_page_preview=True
             )
-            logger.info(f"✅✅✅ WELCOME TERKIRIM ke channel untuk {first_name} (Message ID: {sent_message.message_id})")
+            logger.info(f"✅ Welcome terkirim ke channel untuk {first_name}")
         except Exception as e:
-            logger.error(f"❌❌❌ GAGAL KIRIM WELCOME: {e}")
-            logger.error(f"   Tipe Error: {type(e).__name__}")
-            logger.error(f"   Detail: {str(e)}")
-        
-        # ===== KIRIM PESAN PRIVATE KE MEMBER =====
-        try:
-            private_text = (
-                f"Halo {first_name}! 👋\n\n"
-                f"Terima kasih sudah bergabung dengan *BOLAPELANGI 2*! 🎉\n\n"
-                f"⚽ *PROMO SPESIAL UNTUK MEMBER BARU*\n"
-                f"• *CASHBACK 100% MIX PARLAY*\n"
-                f"• Modal Rp 10.000\n"
-                f"• 5 tim TODAY\n"
-                f"• Odds 1.80\n"
-                f"• Max bonus Rp 300.000/hari\n\n"
-                f"📱 *Link Penting:*\n"
-                f"• [🔥 KLAIM BONUS VIA WA](https://bopel2.link/wa)\n"
-                f"• [📊 PREDIKSI JITU](https://bopel2.vip/ChannelWA-Jadwal-Prediksi)\n"
-                f"• [📢 CHANNEL WHATSAPP](https://bopel2.vip/Channel-Whatsapp)\n\n"
-                f"🚀 *GasPoll terus!*"
-            )
-            
-            await context.bot.send_message(
-                chat_id=user_id,
-                text=private_text,
-                parse_mode=ParseMode.MARKDOWN
-            )
-            logger.info(f"✅ Private message terkirim ke {first_name}")
-        except Exception as e:
-            logger.info(f"⚠️ Tidak bisa kirim private ke {first_name}: {e}")
-    
-    logger.debug("=" * 50)
+            logger.error(f"❌ Gagal kirim welcome: {e}")
 
-# ==================== HANDLER UNTUK TEST ====================
+# ==================== TEST CHANNEL ====================
 
 async def test_channel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Command untuk test kirim pesan ke channel"""
@@ -382,7 +334,6 @@ async def test_channel_command(update: Update, context: ContextTypes.DEFAULT_TYP
     logger.info(f"🧪 /test_channel dari {user.first_name}")
     
     try:
-        # Kirim pesan test ke channel
         test_message = await context.bot.send_message(
             chat_id=CHANNEL_ID,
             text="🧪 *TEST BOT*\n\nBot aktif dan bisa mengirim pesan ke channel!",
@@ -407,13 +358,12 @@ async def post_init(application: Application):
     logger.info("🤖 BOT BOLAPELANGI 2 READY!")
     logger.info("=" * 50)
     
-    # Cek koneksi
     try:
         bot_info = await application.bot.get_me()
         logger.info(f"✅ Bot: @{bot_info.username}")
         logger.info(f"✅ Channel ID: {CHANNEL_ID}")
         
-        # Coba kirim pesan ke channel untuk test
+        # Kirim pesan startup ke channel
         try:
             await application.bot.send_message(
                 chat_id=CHANNEL_ID,
@@ -425,7 +375,7 @@ async def post_init(application: Application):
             logger.error(f"❌ Tidak bisa kirim pesan startup ke channel: {e}")
             logger.error("   PASTIKAN BOT SUDAH JADI ADMIN CHANNEL!")
         
-        logger.info("✅ Button sudah terpasang di /start")
+        logger.info("✅ Semua fitur siap digunakan!")
     except Exception as e:
         logger.error(f"❌ Gagal: {e}")
 
@@ -435,7 +385,7 @@ def main():
     """Main function to run the bot"""
     
     print("=" * 60)
-    print("🤖 BOT BOLAPELANGI 2 - DENGAN DEBUG WELCOME")
+    print("🤖 BOT BOLAPELANGI 2 - FINAL VERSION")
     print("=" * 60)
     
     # Validasi token
@@ -461,9 +411,7 @@ def main():
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("promo", promo_command))
-    application.add_handler(CommandHandler("aturan", aturan_command))
-    application.add_handler(CommandHandler("kontak", kontak_command))
-    application.add_handler(CommandHandler("test_channel", test_channel_command))  # Command test baru
+    application.add_handler(CommandHandler("test_channel", test_channel_command))
     
     # Callback handler untuk button
     application.add_handler(CallbackQueryHandler(button_callback))
@@ -481,10 +429,9 @@ def main():
     
     print("=" * 60)
     print("📢 BOT RUNNING di RAILWAY")
-    print("📢 Fitur Button: AKTIF")
-    print("📢 Button: LOGIN | DAFTAR | CLAIM EVENT PARLAY")
-    print("📢 DEBUG WELCOME: AKTIF - Cek logs untuk detail")
-    print("📢 Command baru: /test_channel - Test kirim ke channel")
+    print("📢 Fitur: Auto Welcome | Promo dengan Gambar")
+    print("📢 Button: LOGIN | DAFTAR | CLAIM EVENT | LIHAT PROMO")
+    print("📢 Command: /start, /promo, /help, /test_channel")
     print("=" * 60)
     sys.stdout.flush()
     
