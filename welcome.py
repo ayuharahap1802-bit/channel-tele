@@ -1,6 +1,6 @@
 """
 TELEGRAM WELCOME BOT - BOLAPELANGI 2
-VERSI: RAILWAY + GITHUB READY (FIXED TOKEN)
+VERSI: RAILWAY + GITHUB READY (HANYA CHANNEL ID)
 Fitur: Auto welcome saat ada member baru join channel
 Created for: @bolapelangi2_bot
 """
@@ -24,22 +24,16 @@ print("=" * 60)
 
 # Baca dari environment variable Railway
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-CHANNEL_USERNAME = os.environ.get("CHANNEL_USERNAME")
 CHANNEL_ID_STR = os.environ.get("CHANNEL_ID")
 
 # DEBUG: Cetak nilai yang dibaca
 print(f"🔍 BOT_TOKEN dari env: {BOT_TOKEN}")
-print(f"🔍 CHANNEL_USERNAME dari env: {CHANNEL_USERNAME}")
 print(f"🔍 CHANNEL_ID dari env: {CHANNEL_ID_STR}")
 
 # Fallback ke default jika environment variables tidak ada
 if not BOT_TOKEN:
     BOT_TOKEN = "8793227199:AAEXajy3RDO7SpMSCloj13Z4ubX3DXNvN4M"
     print("⚠️ BOT_TOKEN tidak ditemukan di env, menggunakan default")
-
-if not CHANNEL_USERNAME:
-    CHANNEL_USERNAME = "@bolapelangi2_channel"
-    print("⚠️ CHANNEL_USERNAME tidak ditemukan di env, menggunakan default")
 
 if not CHANNEL_ID_STR:
     CHANNEL_ID_STR = "-1003573191693"
@@ -76,7 +70,6 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"• Info promo terbaru\n"
         f"• Cara klaim bonus\n\n"
         f"📌 *Link Penting:*\n"
-        f"• Channel: {CHANNEL_USERNAME}\n"
         f"• Klaim Bonus: https://bopel2.link/wa\n"
         f"• Prediksi: https://bopel2.vip/ChannelWA-Jadwal-Prediksi\n\n"
         f"🔥 *GasPoll!* 🔥"
@@ -94,7 +87,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• /aturan - Syarat & ketentuan\n"
         "• /kontak - Kontak official\n\n"
         "*Untuk Admin:*\n"
-        f"Bot akan otomatis menyapa member baru yang join ke channel {CHANNEL_USERNAME}\n\n"
+        "Bot akan otomatis menyapa member baru yang join ke channel\n\n"
         "*Kendala Teknis?*\n"
         "Hubungi WA Official: https://bopel2.link/wa"
     )
@@ -167,7 +160,7 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
     # Log untuk debugging
     logger.info(f"📨 Pesan diterima dari chat {chat.id} ({chat.title})")
     
-    # Cek apakah ini channel target
+    # Cek apakah ini channel target (hanya pakai ID)
     if chat.id != CHANNEL_ID:
         logger.info(f"⏭️ Bukan channel target ({chat.id} != {CHANNEL_ID})")
         return
@@ -291,7 +284,7 @@ def main():
     application.add_handler(CommandHandler("aturan", aturan_command))
     application.add_handler(CommandHandler("kontak", kontak_command))
     
-    # Handler untuk welcome message (via channel post)
+    # Handler untuk welcome message (via channel post) - HANYA PAKAI CHANNEL ID
     application.add_handler(
         MessageHandler(
             filters.Chat(chat_id=CHANNEL_ID) & filters.StatusUpdate.NEW_CHAT_MEMBERS,
@@ -307,7 +300,6 @@ def main():
     print("🤖 BOT BOLAPELANGI 2 - RAILWAY EDITION")
     print("=" * 60)
     print(f"✅ Token: {BOT_TOKEN[:10]}...{BOT_TOKEN[-5:]}")
-    print(f"✅ Channel Target: {CHANNEL_USERNAME}")
     print(f"✅ Channel ID: {CHANNEL_ID}")
     print("=" * 60)
     print("📢 Status: RUNNING on RAILWAY")
