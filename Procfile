@@ -1,1 +1,1 @@
-worker: python welcome.py
+web: python welcome.py
