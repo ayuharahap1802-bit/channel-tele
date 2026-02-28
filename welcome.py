@@ -5,8 +5,33 @@ Fitur: Auto Welcome | Auto Post Scheduler | Broadcast | Admin Panel | User Track
 Created for: @bolapelangi2_bot
 Author: Sistem Profesional
 """
-
+import threading
 import os
+try:
+    from flask import Flask, jsonify
+    WEB_SERVER_AVAILABLE = True
+except ImportError:
+    WEB_SERVER_AVAILABLE = False
+    print("⚠️ Flask tidak terinstall. Health check Railway mungkin gagal.")
+
+if WEB_SERVER_AVAILABLE:
+    app = Flask(__name__)
+    
+    @app.route('/')
+    @app.route('/health')
+    def health_check():
+        return jsonify({"status": "ok", "message": "Bot is running"})
+    
+    def run_web_server():
+        port = int(os.environ.get("PORT", 8080))
+        app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
+    
+    # Jalankan web server di thread terpisah
+    web_thread = threading.Thread(target=run_web_server, daemon=True)
+    web_thread.start()
+    print(f"🌐 Web server started on port {os.environ.get('PORT', 8080)} for Railway health check")
+
+
 import logging
 import sys
 import asyncio
