@@ -1,0 +1,19 @@
+{
+    "general": {
+        "bot_name": "BOLAPELANGI 2 Bot",
+        "language": "id",
+        "timezone": "Asia/Jakarta",
+        "maintenance_mode": false
+    },
+    "messages": {
+        "welcome": "👋 Halo {first_name}! Selamat datang di {bot_name}",
+        "help": "📚 Gunakan /start untuk memulai",
+        "error": "❌ Terjadi kesalahan. Silakan coba lagi.",
+        "unauthorized": "❌ Anda tidak memiliki akses ke fitur ini."
+    },
+    "limits": {
+        "users_per_page": 10,
+        "max_broadcast_length": 4096,
+        "max_posts": 50
+    }
+}
