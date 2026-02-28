@@ -1,0 +1,47 @@
+{
+    "replies": [
+        {
+            "trigger": ["login", "masuk"],
+            "response": "🔐 *Link Login*\n\nKlik tombol di bawah untuk login:\n[LOGIN]({login_url})",
+            "type": "text",
+            "buttons": [
+                {"text": "🔐 LOGIN", "url": "{login_url}"}
+            ]
+        },
+        {
+            "trigger": ["daftar", "register", "registrasi"],
+            "response": "📝 *Link Daftar*\n\nKlik tombol di bawah untuk mendaftar:\n[DAFTAR]({daftar_url})",
+            "type": "text",
+            "buttons": [
+                {"text": "📝 DAFTAR", "url": "{daftar_url}"}
+            ]
+        },
+        {
+            "trigger": ["claim", "klaim", "bonus"],
+            "response": "🎁 *Claim Bonus*\n\nKlik tombol di bawah untuk klaim bonus:\n[KLAIM]({claim_url})",
+            "type": "text",
+            "buttons": [
+                {"text": "🎁 CLAIM", "url": "{claim_url}"}
+            ]
+        },
+        {
+            "trigger": ["prediksi", "jitu", "tajir"],
+            "response": "📈 *Prediksi Jitu*\n\nDapatkan prediksi jitu di channel kami:\n[PREDIKSI]({prediksi_url})",
+            "type": "text",
+            "buttons": [
+                {"text": "📈 PREDIKSI", "url": "{prediksi_url}"}
+            ]
+        },
+        {
+            "trigger": ["admin", "panel"],
+            "response": "⚙️ *Panel Admin*\n\nGunakan /admin untuk membuka panel admin.",
+            "type": "text",
+            "require_auth": true
+        },
+        {
+            "trigger": ["help", "bantuan", "tolong"],
+            "response": "📚 *Bantuan*\n\nGunakan /help untuk melihat semua perintah yang tersedia.",
+            "type": "text"
+        }
+    ]
+}
