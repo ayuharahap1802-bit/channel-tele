@@ -1,0 +1,103 @@
+{
+    "errors": {
+        "general": {
+            "title": "❌ Terjadi Kesalahan",
+            "message": "Maaf, terjadi kesalahan. Silakan coba lagi nanti.",
+            "suggestion": "Jika masalah berlanjut, hubungi admin."
+        },
+        "database": {
+            "title": "❌ Database Error",
+            "message": "Kesalahan pada database. Tim teknis telah diberitahu.",
+            "suggestion": "Silakan coba lagi dalam beberapa saat."
+        },
+        "permission": {
+            "title": "❌ Akses Ditolak",
+            "message": "Anda tidak memiliki izin untuk menggunakan perintah ini.",
+            "suggestion": "Hubungi admin jika Anda memerlukan akses."
+        },
+        "not_found": {
+            "title": "❌ Tidak Ditemukan",
+            "message": "Data yang Anda cari tidak ditemukan.",
+            "suggestion": "Periksa kembali ID atau keyword Anda."
+        },
+        "invalid_input": {
+            "title": "❌ Input Tidak Valid",
+            "message": "Format input yang Anda masukkan salah.",
+            "suggestion": "Periksa kembali format yang diminta."
+        },
+        "rate_limit": {
+            "title": "⏰ Terlalu Banyak Permintaan",
+            "message": "Anda terlalu banyak melakukan permintaan.",
+            "suggestion": "Silakan tunggu beberapa saat sebelum mencoba lagi."
+        },
+        "maintenance": {
+            "title": "🔧 Mode Maintenance",
+            "message": "Bot sedang dalam perawatan.",
+            "suggestion": "Silakan coba lagi nanti."
+        },
+        "timeout": {
+            "title": "⏰ Timeout",
+            "message": "Permintaan timeout. Server mungkin sibuk.",
+            "suggestion": "Silakan coba lagi."
+        }
+    },
+    "warnings": {
+        "broadcast_limit": {
+            "title": "⚠️ Batas Broadcast",
+            "message": "Anda telah mencapai batas broadcast hari ini.",
+            "suggestion": "Maksimal {limit} broadcast per hari."
+        },
+        "large_broadcast": {
+            "title": "⚠️ Broadcast Besar",
+            "message": "Anda akan mengirim broadcast ke {count} user.",
+            "suggestion": "Ini akan memakan waktu sekitar {minutes} menit."
+        },
+        "no_users": {
+            "title": "⚠️ Tidak Ada User",
+            "message": "Tidak ada user yang memenuhi kriteria.",
+            "suggestion": "Periksa kembali filter yang digunakan."
+        },
+        "duplicate_post": {
+            "title": "⚠️ Jadwal Duplikat",
+            "message": "Sudah ada jadwal di jam {time}.",
+            "suggestion": "Gunakan jam yang berbeda atau nonaktifkan jadwal yang ada."
+        }
+    },
+    "success": {
+        "broadcast": {
+            "title": "✅ Broadcast Berhasil",
+            "message": "Broadcast telah dikirim ke {success} user.",
+            "details": "Gagal: {failed}, Total: {total}"
+        },
+        "backup": {
+            "title": "✅ Backup Berhasil",
+            "message": "Database telah dibackup.",
+            "details": "File: {filename}, Size: {size}"
+        },
+        "settings": {
+            "title": "✅ Pengaturan Diubah",
+            "message": "Setting {key} telah diubah menjadi {value}."
+        },
+        "post_added": {
+            "title": "✅ Jadwal Ditambahkan",
+            "message": "Jadwal auto post ID {id} berhasil ditambahkan.",
+            "details": "Waktu: {time}, Kategori: {category}"
+        },
+        "post_updated": {
+            "title": "✅ Jadwal Diupdate",
+            "message": "Jadwal ID {id} berhasil diupdate."
+        },
+        "post_deleted": {
+            "title": "✅ Jadwal Dihapus",
+            "message": "Jadwal ID {id} berhasil dihapus."
+        },
+        "admin_added": {
+            "title": "✅ Admin Ditambahkan",
+            "message": "User {user_id} sekarang adalah admin."
+        },
+        "admin_removed": {
+            "title": "✅ Admin Dihapus",
+            "message": "Admin {user_id} telah dihapus."
+        }
+    }
+}
