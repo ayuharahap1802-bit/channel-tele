@@ -1,0 +1,104 @@
+{
+    "public_commands": [
+        {
+            "command": "start",
+            "description": "Memulai bot dan menampilkan menu utama",
+            "usage": "/start",
+            "category": "Umum"
+        },
+        {
+            "command": "help",
+            "description": "Menampilkan bantuan dan daftar perintah",
+            "usage": "/help",
+            "category": "Umum"
+        },
+        {
+            "command": "info",
+            "description": "Menampilkan informasi akun Anda",
+            "usage": "/info",
+            "category": "Umum"
+        },
+        {
+            "command": "promo",
+            "description": "Menampilkan promo terbaru",
+            "usage": "/promo",
+            "category": "Promo"
+        },
+        {
+            "command": "stats",
+            "description": "Menampilkan statistik bot",
+            "usage": "/stats",
+            "category": "Informasi"
+        }
+    ],
+    "admin_commands": [
+        {
+            "command": "admin",
+            "description": "Membuka dashboard admin",
+            "usage": "/admin",
+            "category": "Admin",
+            "min_role": "admin"
+        },
+        {
+            "command": "users",
+            "description": "Melihat daftar user",
+            "usage": "/users [page] atau /users [search]",
+            "category": "User Management",
+            "min_role": "admin",
+            "permission": "can_manage_users"
+        },
+        {
+            "command": "broadcast",
+            "description": "Mengirim broadcast ke semua user",
+            "usage": "/broadcast",
+            "category": "Broadcast",
+            "min_role": "admin",
+            "permission": "can_broadcast"
+        },
+        {
+            "command": "posts",
+            "description": "Mengelola jadwal auto post",
+            "usage": "/posts",
+            "category": "Auto Post",
+            "min_role": "admin",
+            "permission": "can_manage_posts"
+        }
+    ],
+    "super_admin_commands": [
+        {
+            "command": "admins",
+            "description": "Mengelola admin",
+            "usage": "/admins",
+            "category": "Admin Management",
+            "min_role": "super_admin"
+        },
+        {
+            "command": "settings",
+            "description": "Melihat pengaturan bot",
+            "usage": "/settings",
+            "category": "Configuration",
+            "min_role": "super_admin"
+        },
+        {
+            "command": "set",
+            "description": "Mengubah pengaturan bot",
+            "usage": "/set [key] [value]",
+            "category": "Configuration",
+            "min_role": "super_admin"
+        },
+        {
+            "command": "backup",
+            "description": "Membuat backup database",
+            "usage": "/backup",
+            "category": "Maintenance",
+            "min_role": "super_admin"
+        },
+        {
+            "command": "logs",
+            "description": "Melihat log aktivitas",
+            "usage": "/logs",
+            "category": "Maintenance",
+            "min_role": "super_admin"
+        }
+    ]
+}
