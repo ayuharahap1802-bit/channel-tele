@@ -1,0 +1,34 @@
+{
+    "tasks": [
+        {
+            "name": "Auto Post Check",
+            "interval": 60,
+            "unit": "seconds",
+            "function": "check_auto_posts",
+            "enabled": true
+        },
+        {
+            "name": "Scheduled Broadcast Check",
+            "interval": 300,
+            "unit": "seconds",
+            "function": "check_scheduled_broadcasts",
+            "enabled": true
+        },
+        {
+            "name": "Database Backup",
+            "interval": 24,
+            "unit": "hours",
+            "function": "auto_backup",
+            "enabled": true,
+            "time": "03:00"
+        },
+        {
+            "name": "Clean Old Logs",
+            "interval": 168,
+            "unit": "hours",
+            "function": "clean_old_logs",
+            "enabled": true,
+            "retention_days": 30
+        },
+        {
+            "name":
