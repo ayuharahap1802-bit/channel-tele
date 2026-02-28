@@ -3,18 +3,35 @@
         "name": "Promo Cashback",
         "type": "text",
         "text": "⚽ *PROMO CASHBACK 100%* ⚽\n\nHalo {first_name}! Dapatkan cashback spesial hari ini!\n\n📋 *Syarat & Ketentuan:*\n• Min deposit Rp 50.000\n• Berlaku untuk semua permainan\n• Cashback hingga 100%\n\n🟢 [KLAIM BONUS](https://bopel2.link/wa)",
-        "image_url": null
+        "image_url": null,
+        "variables": ["first_name", "user_id", "date"]
     },
     {
         "name": "Info Prediksi",
         "type": "text",
         "text": "📈 *PREDIKSI JITU HARI INI* 📈\n\nHalo {first_name}! Berikut prediksi untuk pertandingan malam ini:\n\n• Liga Champions: Real Madrid vs Bayern\n• Liga Inggris: Manchester City vs Arsenal\n• Liga Italia: Inter vs Juventus\n\nCek selengkapnya di channel prediksi kami:\n\n📢 [CHANNEL PREDIKSI](https://bopel2.vip/ChannelWA-Jadwal-Prediksi)",
-        "image_url": null
+        "image_url": null,
+        "variables": ["first_name"]
     },
     {
         "name": "Bonus Deposit",
         "type": "text",
         "text": "🎁 *BONUS DEPOSIT 20%* 🎁\n\nHalo {first_name}! Dapatkan bonus deposit 20% untuk semua member!\n\n📌 *Cara Klaim:*\n1. Deposit minimal Rp 50.000\n2. Konfirmasi ke WA Official\n3. Bonus otomatis masuk\n\n🟢 [KLAIM BONUS](https://bopel2.link/wa)",
-        "image_url": null
+        "image_url": null,
+        "variables": ["first_name"]
+    },
+    {
+        "name": "Welcome New Member",
+        "type": "welcome",
+        "text": "👋 *SELAMAT DATANG* 👋\n\nHalo {first_name}!\nSelamat bergabung di {bot_name}!\n\n🎁 Dapatkan bonus member baru 100%!\n\n🟢 [KLAIM BONUS]({claim_url})",
+        "image_url": "https://i.ibb.co/your-image/welcome.jpg",
+        "variables": ["first_name", "bot_name", "claim_url"]
+    },
+    {
+        "name": "Maintenance Alert",
+        "type": "alert",
+        "text": "🔧 *PEMBERITAHUAN MAINTENANCE* 🔧\n\nHalo {first_name},\n\nBot akan menjalani maintenance pada:\n📅 {date}\n⏰ {time}\n\nEstimasi waktu: {duration} menit\n\nMohon maaf atas ketidaknyamanannya.",
+        "image_url": null,
+        "variables": ["first_name", "date", "time", "duration"]
     }
 ]
