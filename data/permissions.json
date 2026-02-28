@@ -1,0 +1,69 @@
+{
+    "roles": {
+        "super_admin": {
+            "name": "Super Admin",
+            "description": "Akses penuh ke semua fitur",
+            "permissions": {
+                "can_manage_users": true,
+                "can_manage_posts": true,
+                "can_broadcast": true,
+                "can_manage_admins": true,
+                "can_view_stats": true,
+                "can_edit_settings": true,
+                "can_manage_templates": true,
+                "can_backup_restore": true,
+                "can_view_logs": true,
+                "can_ban_users": true
+            }
+        },
+        "admin": {
+            "name": "Admin",
+            "description": "Admin dengan akses terbatas",
+            "permissions": {
+                "can_manage_users": true,
+                "can_manage_posts": true,
+                "can_broadcast": true,
+                "can_manage_admins": false,
+                "can_view_stats": true,
+                "can_edit_settings": false,
+                "can_manage_templates": true,
+                "can_backup_restore": false,
+                "can_view_logs": false,
+                "can_ban_users": false
+            }
+        },
+        "moderator": {
+            "name": "Moderator",
+            "description": "Hanya bisa manage users dan posts",
+            "permissions": {
+                "can_manage_users": true,
+                "can_manage_posts": true,
+                "can_broadcast": false,
+                "can_manage_admins": false,
+                "can_view_stats": false,
+                "can_edit_settings": false,
+                "can_manage_templates": false,
+                "can_backup_restore": false,
+                "can_view_logs": false,
+                "can_ban_users": false
+            }
+        },
+        "broadcaster": {
+            "name": "Broadcaster",
+            "description": "Khusus untuk broadcast saja",
+            "permissions": {
+                "can_manage_users": false,
+                "can_manage_posts": false,
+                "can_broadcast": true,
+                "can_manage_admins": false,
+                "can_view_stats": true,
+                "can_edit_settings": false,
+                "can_manage_templates": true,
+                "can_backup_restore": false,
+                "can_view_logs": false,
+                "can_ban_users": false
+            }
+        }
+    },
+    "default_role": "admin"
+}
