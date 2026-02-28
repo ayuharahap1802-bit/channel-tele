@@ -1,0 +1,45 @@
+{
+    "bot": {
+        "name": "BOLAPELANGI 2 Bot",
+        "version": "2.0.0",
+        "environment": "production"
+    },
+    "super_admins": [
+        850434834,
+        8122523608
+    ],
+    "database": {
+        "file": "bot_database.db",
+        "backup_enabled": true,
+        "backup_folder": "backups"
+    },
+    "features": {
+        "welcome_enabled": true,
+        "auto_post_enabled": true,
+        "broadcast_enabled": true,
+        "user_tracking": true
+    },
+    "broadcast": {
+        "delay_between_messages": 1,
+        "max_per_day": 5
+    },
+    "urls": {
+        "login": "https://bopel2.link/login",
+        "daftar": "https://bopel2.link/daftar",
+        "claim": "https://bopel2.link/wa",
+        "bot_official": "https://t.me/bolapelangi2_bot",
+        "prediksi": "https://bopel2.vip/ChannelWA-Jadwal-Prediksi",
+        "channel_wa": "https://bopel2.vip/Channel-Whatsapp",
+        "channel_tg": "https://bopel2.vip/Channel-Telegram"
+    },
+    "images": {
+        "default_promo": "https://i.ibb.co/your-image/promo-banner.jpg",
+        "default_welcome": "https://i.ibb.co/your-image/welcome-banner.jpg"
+    },
+    "limits": {
+        "users_per_page": 10,
+        "max_broadcast_length": 4096,
+        "max_posts": 50,
+        "max_admins": 20
+    }
+}
