@@ -1,6 +1,6 @@
 """
 TELEGRAM BOT SUPER LENGKAP - BOLAPELANGI 2
-VERSI: ULTIMATE DENGAN DATABASE & BROADCAST
+VERSI: ULTIMATE EDITION v4.0
 Fitur: Auto Welcome | Auto Post Scheduler | Broadcast | Admin Panel | User Tracking | Backup | Logs | Templates
 Created for: @bolapelangi2_bot
 Author: Sistem Profesional
@@ -60,7 +60,7 @@ except ImportError:
     print("⚠️ python-dotenv not installed, using environment variables only")
 
 print("=" * 70)
-print("🔍 MEMULAI BOT BOLAPELANGI 2 ULTIMATE EDITION...")
+print("🔍 MEMULAI BOT BOLAPELANGI 2 ULTIMATE EDITION v4.0...")
 print("=" * 70)
 
 # ==================== KONFIGURASI DARI ENVIRONMENT ====================
@@ -170,7 +170,7 @@ PROMO_TEXT = """
 class DatabaseManager:
     """Manager database SQLite untuk menyimpan semua data bot"""
     
-    VERSION = 3
+    VERSION = 4
     
     def __init__(self, db_file: str = DATABASE_FILE):
         self.db_file = db_file
@@ -383,6 +383,7 @@ class DatabaseManager:
                 ('max_broadcast_length', '4096', 'integer', 'Maximum broadcast message length'),
                 ('users_per_page', '10', 'integer', 'Users per page in listing'),
                 ('auto_backup_enabled', 'true', 'boolean', 'Auto backup enabled'),
+                ('backup_interval_hours', '24', 'integer', 'Backup interval in hours'),
             ]
             for key, value, typ, desc in default_settings:
                 cursor.execute('INSERT OR IGNORE INTO settings (key, value, type, description) VALUES (?, ?, ?, ?)', 
@@ -489,7 +490,8 @@ class DatabaseManager:
                 cursor.execute('SELECT * FROM users ORDER BY joined_date DESC LIMIT ? OFFSET ?', (limit, offset))
             else:
                 cursor.execute('SELECT * FROM users WHERE is_blocked = 0 ORDER BY joined_date DESC LIMIT ? OFFSET ?', (limit, offset))
-            return [dict(row) for row in cursor.fetchall()]
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
     
     def search_users(self, query: str) -> List[Dict]:
         """Search users by username or name"""
@@ -500,7 +502,8 @@ class DatabaseManager:
                 WHERE username LIKE ? OR first_name LIKE ? OR last_name LIKE ?
                 ORDER BY joined_date DESC LIMIT 50
             ''', (f'%{query}%', f'%{query}%', f'%{query}%'))
-            return [dict(row) for row in cursor.fetchall()]
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
     
     def get_user_count(self) -> Dict:
         """Dapatkan statistik user lengkap"""
@@ -508,28 +511,36 @@ class DatabaseManager:
             cursor = conn.cursor()
             
             cursor.execute('SELECT COUNT(*) as total FROM users')
-            total = cursor.fetchone()[0]
+            total_row = cursor.fetchone()
+            total = total_row['total'] if total_row else 0
             
             cursor.execute('SELECT COUNT(*) as today FROM users WHERE date(joined_date) = date("now")')
-            today = cursor.fetchone()[0]
+            today_row = cursor.fetchone()
+            today = today_row['today'] if today_row else 0
             
             cursor.execute('SELECT COUNT(*) as week FROM users WHERE joined_date >= datetime("now", "-7 days")')
-            week = cursor.fetchone()[0]
+            week_row = cursor.fetchone()
+            week = week_row['week'] if week_row else 0
             
             cursor.execute('SELECT COUNT(*) as month FROM users WHERE joined_date >= datetime("now", "-30 days")')
-            month = cursor.fetchone()[0]
+            month_row = cursor.fetchone()
+            month = month_row['month'] if month_row else 0
             
             cursor.execute('SELECT COUNT(*) as active_24h FROM users WHERE last_active > datetime("now", "-1 day")')
-            active_24h = cursor.fetchone()[0]
+            active_24h_row = cursor.fetchone()
+            active_24h = active_24h_row['active_24h'] if active_24h_row else 0
             
             cursor.execute('SELECT COUNT(*) as active_week FROM users WHERE last_active > datetime("now", "-7 days")')
-            active_week = cursor.fetchone()[0]
+            active_week_row = cursor.fetchone()
+            active_week = active_week_row['active_week'] if active_week_row else 0
             
             cursor.execute('SELECT COUNT(*) as blocked FROM users WHERE is_blocked = 1')
-            blocked = cursor.fetchone()[0]
+            blocked_row = cursor.fetchone()
+            blocked = blocked_row['blocked'] if blocked_row else 0
             
             cursor.execute('SELECT COUNT(*) as banned FROM users WHERE is_banned = 1')
-            banned = cursor.fetchone()[0]
+            banned_row = cursor.fetchone()
+            banned = banned_row['banned'] if banned_row else 0
             
             cursor.execute('''
                 SELECT language_code, COUNT(*) as count 
@@ -539,7 +550,8 @@ class DatabaseManager:
                 ORDER BY count DESC 
                 LIMIT 5
             ''')
-            languages = [dict(row) for row in cursor.fetchall()]
+            lang_rows = cursor.fetchall()
+            languages = [dict(row) for row in lang_rows]
             
             return {
                 'total': total,
@@ -586,7 +598,8 @@ class DatabaseManager:
             cursor.execute('SELECT role FROM admins WHERE user_id = ?', (user_id,))
             row = cursor.fetchone()
             if row:
-                return UserRole.ADMIN if row['role'] == 'admin' else UserRole.SUPER_ADMIN
+                role = row['role'] if row else None
+                return UserRole.ADMIN if role == 'admin' else UserRole.SUPER_ADMIN
         return UserRole.USER
     
     def is_admin(self, user_id: int) -> bool:
@@ -678,7 +691,8 @@ class DatabaseManager:
                     CASE WHEN a.role = 'super_admin' THEN 0 ELSE 1 END,
                     a.added_date DESC
             ''')
-            return [dict(row) for row in cursor.fetchall()]
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
     
     def get_admin_permissions(self, user_id: int) -> Dict:
         """Get admin permissions"""
@@ -719,7 +733,8 @@ class DatabaseManager:
                 ORDER BY l.timestamp DESC
                 LIMIT ?
             ''', (limit,))
-            return [dict(row) for row in cursor.fetchall()]
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
     
     # ========== BROADCAST MANAGEMENT ==========
     
@@ -770,7 +785,8 @@ class DatabaseManager:
                 AND scheduled_time <= datetime('now')
                 ORDER BY scheduled_time
             ''')
-            return [dict(row) for row in cursor.fetchall()]
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
     
     def get_all_broadcasts(self, limit: int = 50, offset: int = 0) -> List[Dict]:
         """Ambil semua broadcast"""
@@ -783,7 +799,8 @@ class DatabaseManager:
                 ORDER BY b.created_at DESC
                 LIMIT ? OFFSET ?
             ''', (limit, offset))
-            return [dict(row) for row in cursor.fetchall()]
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
     
     def get_broadcast_stats(self) -> Dict:
         """Get broadcast statistics"""
@@ -791,19 +808,26 @@ class DatabaseManager:
             cursor = conn.cursor()
             
             cursor.execute('SELECT COUNT(*) FROM broadcast_messages')
-            total = cursor.fetchone()[0]
+            total_row = cursor.fetchone()
+            total = total_row[0] if total_row else 0
             
             cursor.execute('SELECT COUNT(*) FROM broadcast_messages WHERE status = "sent"')
-            sent = cursor.fetchone()[0]
+            sent_row = cursor.fetchone()
+            sent = sent_row[0] if sent_row else 0
             
             cursor.execute('SELECT COUNT(*) FROM broadcast_messages WHERE status = "scheduled"')
-            scheduled = cursor.fetchone()[0]
+            scheduled_row = cursor.fetchone()
+            scheduled = scheduled_row[0] if scheduled_row else 0
             
             cursor.execute('SELECT SUM(success_count) FROM broadcast_messages')
-            total_success = cursor.fetchone()[0] or 0
+            success_row = cursor.fetchone()
+            total_success = success_row[0] if success_row else 0
             
             cursor.execute('SELECT SUM(failed_count) FROM broadcast_messages')
-            total_failed = cursor.fetchone()[0] or 0
+            failed_row = cursor.fetchone()
+            total_failed = failed_row[0] if failed_row else 0
+            
+            success_rate = (total_success / (total_success + total_failed) * 100) if (total_success + total_failed) > 0 else 0
             
             return {
                 'total': total,
@@ -811,7 +835,7 @@ class DatabaseManager:
                 'scheduled': scheduled,
                 'total_success': total_success,
                 'total_failed': total_failed,
-                'success_rate': (total_success / (total_success + total_failed) * 100) if (total_success + total_failed) > 0 else 0
+                'success_rate': success_rate
             }
     
     def update_broadcast_status(self, broadcast_id: int, status: str, success: int = 0, failed: int = 0):
@@ -850,7 +874,8 @@ class DatabaseManager:
                 cursor.execute('SELECT * FROM templates WHERE type = ? ORDER BY name', (template_type,))
             else:
                 cursor.execute('SELECT * FROM templates ORDER BY name')
-            return [dict(row) for row in cursor.fetchall()]
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
     
     def render_template(self, template_id: int, variables: Dict) -> Optional[str]:
         """Render template with variables"""
@@ -882,7 +907,8 @@ class DatabaseManager:
                 cursor.execute('SELECT * FROM auto_posts ORDER BY time')
             else:
                 cursor.execute('SELECT * FROM auto_posts WHERE is_active = 1 ORDER BY time')
-            return [dict(row) for row in cursor.fetchall()]
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
     
     def get_post(self, post_id: int) -> Optional[Dict]:
         """Ambil satu post berdasarkan ID"""
@@ -976,6 +1002,11 @@ class DatabaseManager:
                     return int(value)
                 except:
                     return default
+            elif typ == 'float':
+                try:
+                    return float(value)
+                except:
+                    return default
             else:
                 return value
     
@@ -1004,7 +1035,8 @@ class DatabaseManager:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('SELECT * FROM settings ORDER BY key')
-            return [dict(row) for row in cursor.fetchall()]
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
     
     # ========== INTERACTION LOGGING ==========
     
@@ -1245,12 +1277,16 @@ class BroadcastManager:
         if criteria.get('not_banned'):
             conditions.append("is_banned = 0")
         
+        if criteria.get('not_admin'):
+            conditions.append("user_id NOT IN (SELECT user_id FROM admins)")
+        
         query = f"SELECT * FROM users WHERE {' AND '.join(conditions)} ORDER BY joined_date DESC"
         
         with db.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(query, params)
-            return [dict(row) for row in cursor.fetchall()]
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
     
     async def process_broadcast_queue(self, context: ContextTypes.DEFAULT_TYPE):
         """Proses antrian broadcast"""
@@ -1299,6 +1335,33 @@ def role_required(min_role: UserRole = UserRole.ADMIN):
             return await func(update, context, *args, **kwargs)
         return wrapper
     return decorator
+
+def admin_required(func):
+    """Decorator untuk memeriksa apakah user adalah admin"""
+    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
+        user = update.effective_user
+        if not db.is_admin(user.id):
+            await update.message.reply_text(
+                "❌ *Akses Ditolak*\n\nAnda tidak memiliki izin untuk menggunakan perintah ini.",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            logger.warning(f"⚠️ Akses ditolak untuk user {user.id} ({user.first_name})")
+            return
+        return await func(update, context, *args, **kwargs)
+    return wrapper
+
+def super_admin_required(func):
+    """Decorator untuk memeriksa apakah user adalah super admin"""
+    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
+        user = update.effective_user
+        if not db.is_super_admin(user.id):
+            await update.message.reply_text(
+                "❌ *Super Admin Only*\n\nPerintah ini hanya untuk super admin.",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            return
+        return await func(update, context, *args, **kwargs)
+    return wrapper
 
 # ==================== COMMAND HANDLERS ====================
 
@@ -1440,10 +1503,12 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     with db.get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute('SELECT COUNT(*) FROM user_interactions WHERE user_id = ?', (user.id,))
-        interactions = cursor.fetchone()[0]
+        interactions_row = cursor.fetchone()
+        interactions = interactions_row[0] if interactions_row else 0
         
         cursor.execute('SELECT COUNT(*) FROM broadcast_recipients WHERE user_id = ? AND sent_status = "success"', (user.id,))
-        broadcasts_received = cursor.fetchone()[0]
+        broadcasts_row = cursor.fetchone()
+        broadcasts_received = broadcasts_row[0] if broadcasts_row else 0
     
     role_emoji = {
         UserRole.USER: "👤",
@@ -1533,7 +1598,7 @@ async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ==================== ADMIN DASHBOARD ====================
 
-@role_required(UserRole.ADMIN)
+@admin_required
 async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /admin command - Dashboard admin"""
     user = update.effective_user
@@ -1549,10 +1614,12 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     with db.get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute('SELECT COUNT(*) FROM broadcast_messages WHERE status = "scheduled"')
-        scheduled_broadcasts = cursor.fetchone()[0]
+        scheduled_row = cursor.fetchone()
+        scheduled_broadcasts = scheduled_row[0] if scheduled_row else 0
         
         cursor.execute('SELECT COUNT(*) FROM admin_logs WHERE date(timestamp) = date("now")')
-        today_logs = cursor.fetchone()[0]
+        logs_row = cursor.fetchone()
+        today_logs = logs_row[0] if logs_row else 0
     
     text = (
         "⚙️ *DASHBOARD ADMIN*\n\n"
@@ -1620,7 +1687,7 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ==================== USER MANAGEMENT ====================
 
-@role_required(UserRole.ADMIN)
+@admin_required
 async def users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /users command - Lihat daftar user"""
     user = update.effective_user
@@ -1804,7 +1871,7 @@ async def admins_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ==================== BROADCAST SYSTEM ====================
 
-@role_required(UserRole.ADMIN)
+@admin_required
 async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /broadcast command - Kirim broadcast"""
     user = update.effective_user
@@ -1825,7 +1892,8 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 SELECT COUNT(*) FROM broadcast_messages 
                 WHERE created_by = ? AND date(created_at) = date("now")
             ''', (user.id,))
-            today_count = cursor.fetchone()[0]
+            today_row = cursor.fetchone()
+            today_count = today_row[0] if today_row else 0
             
             max_per_day = db.get_setting_with_type('max_broadcast_per_day', 5)
             
@@ -1860,7 +1928,7 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ==================== AUTO POST MANAGEMENT ====================
 
-@role_required(UserRole.ADMIN)
+@admin_required
 async def posts_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /posts command - Kelola auto post"""
     user = update.effective_user
@@ -1911,7 +1979,7 @@ async def posts_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ==================== STATISTICS ====================
 
-@role_required(UserRole.ADMIN)
+@admin_required
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /stats command - Lihat statistik lengkap"""
     user = update.effective_user
@@ -1932,10 +2000,12 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     with db.get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute('SELECT COUNT(*) as today FROM user_interactions WHERE date(timestamp) = date("now")')
-        interactions_today = cursor.fetchone()[0]
+        today_row = cursor.fetchone()
+        interactions_today = today_row['today'] if today_row else 0
         
         cursor.execute('SELECT COUNT(*) FROM user_interactions')
-        total_interactions = cursor.fetchone()[0]
+        total_row = cursor.fetchone()
+        total_interactions = total_row[0] if total_row else 0
         
         # Top commands
         cursor.execute('''
@@ -1945,7 +2015,8 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ORDER BY count DESC 
             LIMIT 5
         ''')
-        top_commands = [dict(row) for row in cursor.fetchall()]
+        cmd_rows = cursor.fetchall()
+        top_commands = [dict(row) for row in cmd_rows]
     
     text = (
         "📊 *STATISTIK BOT LENGKAP*\n\n"
@@ -1986,7 +2057,7 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for cmd in top_commands:
             text += f"• /{cmd['command']}: {cmd['count']}x\n"
     
-    text += f"\n⚙️ *VERSI BOT*\n• Ultimate Edition v3.0"
+    text += f"\n⚙️ *VERSI BOT*\n• Ultimate Edition v4.0"
     
     keyboard = [[InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')]]
     
@@ -2063,7 +2134,11 @@ async def set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif value.isdigit():
         value_type = 'integer'
     else:
-        value_type = 'string'
+        try:
+            float(value)
+            value_type = 'float'
+        except:
+            value_type = 'string'
     
     if db.update_setting(key, value, update.effective_user.id, value_type):
         await update.message.reply_text(f"✅ Setting `{key}` diubah menjadi `{value}`", parse_mode=ParseMode.MARKDOWN)
@@ -2245,10 +2320,12 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('SELECT COUNT(*) FROM broadcast_messages WHERE status = "scheduled"')
-                scheduled_broadcasts = cursor.fetchone()[0]
+                scheduled_row = cursor.fetchone()
+                scheduled_broadcasts = scheduled_row[0] if scheduled_row else 0
                 
                 cursor.execute('SELECT COUNT(*) FROM admin_logs WHERE date(timestamp) = date("now")')
-                today_logs = cursor.fetchone()[0]
+                logs_row = cursor.fetchone()
+                today_logs = logs_row[0] if logs_row else 0
             
             text = (
                 "⚙️ *DASHBOARD ADMIN*\n\n"
@@ -2432,10 +2509,12 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('SELECT COUNT(*) FROM user_interactions WHERE date(timestamp) = date("now")')
-                interactions_today = cursor.fetchone()[0]
+                today_row = cursor.fetchone()
+                interactions_today = today_row[0] if today_row else 0
                 
                 cursor.execute('SELECT COUNT(*) FROM admin_logs WHERE date(timestamp) = date("now")')
-                logs_today = cursor.fetchone()[0]
+                logs_row = cursor.fetchone()
+                logs_today = logs_row[0] if logs_row else 0
             
             text = (
                 "📊 *STATISTIK BOT*\n\n"
@@ -3069,7 +3148,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Cek apakah user di-block
     user_data = db.get_user(user.id)
-    if user_data and user_data.get('is_blocked'):
+    if user_data and (user_data.get('is_blocked') or user_data.get('is_banned')):
         return
     
     # ===== BAN REASON FLOW =====
@@ -3577,7 +3656,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def post_init(application: Application):
     """Fungsi setelah bot start"""
     logger.info("=" * 70)
-    logger.info("🤖 BOT BOLAPELANGI 2 ULTIMATE EDITION READY!")
+    logger.info("🤖 BOT BOLAPELANGI 2 ULTIMATE EDITION v4.0 READY!")
     logger.info("=" * 70)
     
     try:
@@ -3633,7 +3712,7 @@ async def post_init(application: Application):
         try:
             await application.bot.send_message(
                 chat_id=CHANNEL_ID,
-                text="🤖 *Bot Ultimate Edition Aktif*\n\n✅ Sistem auto post & broadcast siap!",
+                text="🤖 *Bot Ultimate Edition v4.0 Aktif*\n\n✅ Sistem auto post & broadcast siap!",
                 parse_mode=ParseMode.MARKDOWN
             )
             logger.info("✅ Pesan startup terkirim ke channel")
@@ -3654,7 +3733,7 @@ def main():
     """Main function"""
     
     print("=" * 70)
-    print("🤖 BOT BOLAPELANGI 2 - ULTIMATE EDITION")
+    print("🤖 BOT BOLAPELANGI 2 - ULTIMATE EDITION v4.0")
     print("=" * 70)
     print("🔧 FITUR SUPER LENGKAP:")
     print("   ✅ Auto Welcome Member")
@@ -3732,7 +3811,7 @@ def main():
     application.add_error_handler(error_handler)
     
     print("=" * 70)
-    print("📢 BOT RUNNING - ULTIMATE EDITION")
+    print("📢 BOT RUNNING - ULTIMATE EDITION v4.0")
     print("📢 Fitur: Auto Welcome | Auto Post | Broadcast | Admin Panel | Backup | Logs | Templates")
     print("📢 Database: SQLite dengan auto backup")
     print("📢 Super Admin: @Bolapelangi2 & @bolapelangi_2")
