@@ -32,4 +32,13 @@
     "notifications": {
         "new_user": true,
         "broadcast_complete": true,
-       
+        "backup_complete": true,
+        "error_alert": true
+    },
+    "features": {
+        "enable_analytics": true,
+        "enable_export": true,
+        "enable_import": true,
+        "enable_scheduling": true
+    }
+}
