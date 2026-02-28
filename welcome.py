@@ -1,6 +1,6 @@
 """
 TELEGRAM BOT SUPER LENGKAP - BOLAPELANGI 2
-VERSI: ULTIMATE EDITION v4.0
+VERSI: ULTIMATE EDITION v4.1
 Fitur: Auto Welcome | Auto Post Scheduler | Broadcast | Admin Panel | User Tracking | Backup | Logs | Templates
 Created for: @bolapelangi2_bot
 Author: Sistem Profesional
@@ -60,7 +60,7 @@ except ImportError:
     print("⚠️ python-dotenv not installed, using environment variables only")
 
 print("=" * 70)
-print("🔍 MEMULAI BOT BOLAPELANGI 2 ULTIMATE EDITION v4.0...")
+print("🔍 MEMULAI BOT BOLAPELANGI 2 ULTIMATE EDITION v4.1...")
 print("=" * 70)
 
 # ==================== KONFIGURASI DARI ENVIRONMENT ====================
@@ -480,7 +480,9 @@ class DatabaseManager:
             cursor = conn.cursor()
             cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
             row = cursor.fetchone()
-            return dict(row) if row else None
+            if row:
+                return dict(row)
+            return None
     
     def get_all_users(self, include_blocked: bool = False, limit: int = 1000, offset: int = 0) -> List[Dict]:
         """Ambil semua user dengan pagination"""
@@ -511,36 +513,36 @@ class DatabaseManager:
             cursor = conn.cursor()
             
             cursor.execute('SELECT COUNT(*) as total FROM users')
-            total_row = cursor.fetchone()
-            total = total_row['total'] if total_row else 0
+            row = cursor.fetchone()
+            total = row['total'] if row else 0
             
             cursor.execute('SELECT COUNT(*) as today FROM users WHERE date(joined_date) = date("now")')
-            today_row = cursor.fetchone()
-            today = today_row['today'] if today_row else 0
+            row = cursor.fetchone()
+            today = row['today'] if row else 0
             
             cursor.execute('SELECT COUNT(*) as week FROM users WHERE joined_date >= datetime("now", "-7 days")')
-            week_row = cursor.fetchone()
-            week = week_row['week'] if week_row else 0
+            row = cursor.fetchone()
+            week = row['week'] if row else 0
             
             cursor.execute('SELECT COUNT(*) as month FROM users WHERE joined_date >= datetime("now", "-30 days")')
-            month_row = cursor.fetchone()
-            month = month_row['month'] if month_row else 0
+            row = cursor.fetchone()
+            month = row['month'] if row else 0
             
             cursor.execute('SELECT COUNT(*) as active_24h FROM users WHERE last_active > datetime("now", "-1 day")')
-            active_24h_row = cursor.fetchone()
-            active_24h = active_24h_row['active_24h'] if active_24h_row else 0
+            row = cursor.fetchone()
+            active_24h = row['active_24h'] if row else 0
             
             cursor.execute('SELECT COUNT(*) as active_week FROM users WHERE last_active > datetime("now", "-7 days")')
-            active_week_row = cursor.fetchone()
-            active_week = active_week_row['active_week'] if active_week_row else 0
+            row = cursor.fetchone()
+            active_week = row['active_week'] if row else 0
             
             cursor.execute('SELECT COUNT(*) as blocked FROM users WHERE is_blocked = 1')
-            blocked_row = cursor.fetchone()
-            blocked = blocked_row['blocked'] if blocked_row else 0
+            row = cursor.fetchone()
+            blocked = row['blocked'] if row else 0
             
             cursor.execute('SELECT COUNT(*) as banned FROM users WHERE is_banned = 1')
-            banned_row = cursor.fetchone()
-            banned = banned_row['banned'] if banned_row else 0
+            row = cursor.fetchone()
+            banned = row['banned'] if row else 0
             
             cursor.execute('''
                 SELECT language_code, COUNT(*) as count 
@@ -598,7 +600,7 @@ class DatabaseManager:
             cursor.execute('SELECT role FROM admins WHERE user_id = ?', (user_id,))
             row = cursor.fetchone()
             if row:
-                role = row['role'] if row else None
+                role = row['role']
                 return UserRole.ADMIN if role == 'admin' else UserRole.SUPER_ADMIN
         return UserRole.USER
     
@@ -706,7 +708,14 @@ class DatabaseManager:
             row = cursor.fetchone()
             if row:
                 return dict(row)
-            return {}
+            return {
+                'can_manage_users': False,
+                'can_manage_posts': False,
+                'can_broadcast': False,
+                'can_manage_admins': False,
+                'can_view_stats': False,
+                'can_edit_settings': False
+            }
     
     # ========== ADMIN LOGS ==========
     
@@ -808,24 +817,24 @@ class DatabaseManager:
             cursor = conn.cursor()
             
             cursor.execute('SELECT COUNT(*) FROM broadcast_messages')
-            total_row = cursor.fetchone()
-            total = total_row[0] if total_row else 0
+            row = cursor.fetchone()
+            total = row[0] if row else 0
             
             cursor.execute('SELECT COUNT(*) FROM broadcast_messages WHERE status = "sent"')
-            sent_row = cursor.fetchone()
-            sent = sent_row[0] if sent_row else 0
+            row = cursor.fetchone()
+            sent = row[0] if row else 0
             
             cursor.execute('SELECT COUNT(*) FROM broadcast_messages WHERE status = "scheduled"')
-            scheduled_row = cursor.fetchone()
-            scheduled = scheduled_row[0] if scheduled_row else 0
+            row = cursor.fetchone()
+            scheduled = row[0] if row else 0
             
             cursor.execute('SELECT SUM(success_count) FROM broadcast_messages')
-            success_row = cursor.fetchone()
-            total_success = success_row[0] if success_row else 0
+            row = cursor.fetchone()
+            total_success = row[0] if row else 0
             
             cursor.execute('SELECT SUM(failed_count) FROM broadcast_messages')
-            failed_row = cursor.fetchone()
-            total_failed = failed_row[0] if failed_row else 0
+            row = cursor.fetchone()
+            total_failed = row[0] if row else 0
             
             success_rate = (total_success / (total_success + total_failed) * 100) if (total_success + total_failed) > 0 else 0
             
@@ -1037,20 +1046,6 @@ class DatabaseManager:
             cursor.execute('SELECT * FROM settings ORDER BY key')
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
-    
-    # ========== INTERACTION LOGGING ==========
-    
-    def log_interaction(self, user_id: int, command: str, message_text: str = None, response_time: int = None):
-        """Log interaksi user"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    INSERT INTO user_interactions (user_id, command, message_text, response_time_ms)
-                    VALUES (?, ?, ?, ?)
-                ''', (user_id, command, message_text, response_time))
-        except Exception as e:
-            logger.error(f"❌ Gagal log interaksi: {e}")
 
 # ==================== INISIALISASI DATABASE ====================
 
@@ -1503,12 +1498,12 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     with db.get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute('SELECT COUNT(*) FROM user_interactions WHERE user_id = ?', (user.id,))
-        interactions_row = cursor.fetchone()
-        interactions = interactions_row[0] if interactions_row else 0
+        row = cursor.fetchone()
+        interactions = row[0] if row else 0
         
         cursor.execute('SELECT COUNT(*) FROM broadcast_recipients WHERE user_id = ? AND sent_status = "success"', (user.id,))
-        broadcasts_row = cursor.fetchone()
-        broadcasts_received = broadcasts_row[0] if broadcasts_row else 0
+        row = cursor.fetchone()
+        broadcasts_received = row[0] if row else 0
     
     role_emoji = {
         UserRole.USER: "👤",
@@ -1614,12 +1609,12 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     with db.get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute('SELECT COUNT(*) FROM broadcast_messages WHERE status = "scheduled"')
-        scheduled_row = cursor.fetchone()
-        scheduled_broadcasts = scheduled_row[0] if scheduled_row else 0
+        row = cursor.fetchone()
+        scheduled_broadcasts = row[0] if row else 0
         
         cursor.execute('SELECT COUNT(*) FROM admin_logs WHERE date(timestamp) = date("now")')
-        logs_row = cursor.fetchone()
-        today_logs = logs_row[0] if logs_row else 0
+        row = cursor.fetchone()
+        today_logs = row[0] if row else 0
     
     text = (
         "⚙️ *DASHBOARD ADMIN*\n\n"
@@ -1892,8 +1887,8 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 SELECT COUNT(*) FROM broadcast_messages 
                 WHERE created_by = ? AND date(created_at) = date("now")
             ''', (user.id,))
-            today_row = cursor.fetchone()
-            today_count = today_row[0] if today_row else 0
+            row = cursor.fetchone()
+            today_count = row[0] if row else 0
             
             max_per_day = db.get_setting_with_type('max_broadcast_per_day', 5)
             
@@ -2000,12 +1995,12 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     with db.get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute('SELECT COUNT(*) as today FROM user_interactions WHERE date(timestamp) = date("now")')
-        today_row = cursor.fetchone()
-        interactions_today = today_row['today'] if today_row else 0
+        row = cursor.fetchone()
+        interactions_today = row['today'] if row else 0
         
         cursor.execute('SELECT COUNT(*) FROM user_interactions')
-        total_row = cursor.fetchone()
-        total_interactions = total_row[0] if total_row else 0
+        row = cursor.fetchone()
+        total_interactions = row[0] if row else 0
         
         # Top commands
         cursor.execute('''
@@ -2057,7 +2052,7 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for cmd in top_commands:
             text += f"• /{cmd['command']}: {cmd['count']}x\n"
     
-    text += f"\n⚙️ *VERSI BOT*\n• Ultimate Edition v4.0"
+    text += f"\n⚙️ *VERSI BOT*\n• Ultimate Edition v4.1"
     
     keyboard = [[InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')]]
     
@@ -2255,6 +2250,44 @@ async def test_channel_command(update: Update, context: ContextTypes.DEFAULT_TYP
     except Exception as e:
         await update.message.reply_text(f"❌ Gagal: {e}")
 
+# ==================== FUNGSI KIRIM PROMO ====================
+
+async def send_promo(message, context):
+    """Kirim promo dengan gambar"""
+    try:
+        # Buat button untuk link
+        keyboard = [
+            [InlineKeyboardButton("🤖 BOT OFFICIAL", url="https://t.me/bolapelangi2_bot")],
+            [InlineKeyboardButton("📈 PREDIKSI JITU", url="https://bopel2.vip/ChannelWA-Jadwal-Prediksi")],
+            [InlineKeyboardButton("📢 CHANNEL WA", url="https://bopel2.vip/Channel-Whatsapp")],
+            [InlineKeyboardButton("📢 CHANNEL TG", url="https://bopel2.vip/Channel-Telegram")],
+            [InlineKeyboardButton("🟢 KLAIM BONUS", url="https://bopel2.link/wa")],
+            [InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data="back_to_menu")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        # Coba ambil gambar dari database
+        image_url = "https://i.ibb.co/your-image/promo-banner.jpg"  # Default
+        
+        try:
+            await message.reply_photo(
+                photo=image_url,
+                caption=PROMO_TEXT,
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=reply_markup
+            )
+            logger.info("✅ Promo dengan gambar terkirim")
+        except Exception as e:
+            logger.warning(f"⚠️ Gagal kirim gambar: {e}, kirim teks saja")
+            await message.reply_text(
+                text=PROMO_TEXT,
+                parse_mode=ParseMode.MARKDOWN,
+                disable_web_page_preview=True,
+                reply_markup=reply_markup
+            )
+    except Exception as e:
+        logger.error(f"❌ Gagal kirim promo: {e}")
+
 # ==================== BUTTON HANDLERS ====================
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -2278,6 +2311,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
             await query.delete_message()
+            return
         
         elif data == "daftar":
             text = "📝 *Link Daftar*\n\nKlik tombol di bawah untuk mendaftar:"
@@ -2288,6 +2322,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
             await query.delete_message()
+            return
         
         elif data == "claim":
             text = "🎁 *Claim Event Parlay*\n\nKlik tombol di bawah untuk klaim bonus:"
@@ -2298,13 +2333,17 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
             await query.delete_message()
+            return
         
         elif data == "promo":
             await send_promo(query.message, context)
             await query.delete_message()
+            return
         
         elif data == "back_to_menu":
+            # Panggil start_command untuk kembali ke menu utama
             await start_command(update, context)
+            return
         
         # ========== ADMIN BUTTONS ==========
         elif data == "admin_dashboard":
@@ -2320,12 +2359,12 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('SELECT COUNT(*) FROM broadcast_messages WHERE status = "scheduled"')
-                scheduled_row = cursor.fetchone()
-                scheduled_broadcasts = scheduled_row[0] if scheduled_row else 0
+                row = cursor.fetchone()
+                scheduled_broadcasts = row[0] if row else 0
                 
                 cursor.execute('SELECT COUNT(*) FROM admin_logs WHERE date(timestamp) = date("now")')
-                logs_row = cursor.fetchone()
-                today_logs = logs_row[0] if logs_row else 0
+                row = cursor.fetchone()
+                today_logs = row[0] if row else 0
             
             text = (
                 "⚙️ *DASHBOARD ADMIN*\n\n"
@@ -2372,6 +2411,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
+            return
         
         elif data == "admin_users":
             if not db.is_admin(user.id):
@@ -2414,6 +2454,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
+            return
         
         elif data == "admin_broadcast":
             if not db.is_admin(user.id):
@@ -2449,6 +2490,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
+            return
         
         elif data == "admin_posts":
             if not db.is_admin(user.id):
@@ -2491,6 +2533,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
+            return
         
         elif data == "admin_stats":
             if not db.is_admin(user.id):
@@ -2509,12 +2552,12 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('SELECT COUNT(*) FROM user_interactions WHERE date(timestamp) = date("now")')
-                today_row = cursor.fetchone()
-                interactions_today = today_row[0] if today_row else 0
+                row = cursor.fetchone()
+                interactions_today = row[0] if row else 0
                 
                 cursor.execute('SELECT COUNT(*) FROM admin_logs WHERE date(timestamp) = date("now")')
-                logs_row = cursor.fetchone()
-                logs_today = logs_row[0] if logs_row else 0
+                row = cursor.fetchone()
+                logs_today = row[0] if row else 0
             
             text = (
                 "📊 *STATISTIK BOT*\n\n"
@@ -2543,6 +2586,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
+            return
         
         elif data == "admin_logs":
             if not db.is_admin(user.id):
@@ -2570,6 +2614,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
+            return
         
         elif data == "admin_manage_admins":
             if not db.is_super_admin(user.id):
@@ -2602,6 +2647,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
+            return
         
         elif data == "admin_settings":
             if not db.is_super_admin(user.id):
@@ -2626,6 +2672,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
+            return
         
         elif data == "admin_backup":
             if not db.is_super_admin(user.id):
@@ -2646,6 +2693,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
+            return
         
         elif data == "admin_templates":
             if not db.is_super_admin(user.id):
@@ -2675,6 +2723,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
+            return
         
         # ========== PAGINATION ==========
         elif data.startswith('users_page_'):
@@ -2717,6 +2766,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
+            return
         
         # ========== BROADCAST BUTTONS ==========
         elif data == "broadcast_text":
@@ -2732,6 +2782,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Ketik *batal* untuk membatalkan.",
                 parse_mode=ParseMode.MARKDOWN
             )
+            return
         
         elif data == "broadcast_image":
             if not db.is_admin(user.id):
@@ -2744,6 +2795,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Ketik *batal* untuk membatalkan.",
                 parse_mode=ParseMode.MARKDOWN
             )
+            return
         
         elif data == "broadcast_history":
             if not db.is_admin(user.id):
@@ -2783,6 +2835,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
+            return
         
         # ========== POSTS BUTTONS ==========
         elif data == "posts_add":
@@ -2797,6 +2850,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Ketik *batal* untuk membatalkan.",
                 parse_mode=ParseMode.MARKDOWN
             )
+            return
         
         elif data == "posts_list":
             if not db.is_admin(user.id):
@@ -2825,6 +2879,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
+            return
         
         elif data == "posts_edit":
             if not db.is_admin(user.id):
@@ -2837,6 +2892,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Ketik *batal* untuk membatalkan.",
                 parse_mode=ParseMode.MARKDOWN
             )
+            return
         
         elif data == "posts_delete":
             if not db.is_admin(user.id):
@@ -2849,6 +2905,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Ketik *batal* untuk membatalkan.",
                 parse_mode=ParseMode.MARKDOWN
             )
+            return
         
         elif data == "posts_toggle":
             if not db.is_admin(user.id):
@@ -2861,6 +2918,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Ketik *batal* untuk membatalkan.",
                 parse_mode=ParseMode.MARKDOWN
             )
+            return
         
         elif data == "posts_categories":
             if not db.is_admin(user.id):
@@ -2887,6 +2945,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
+            return
         
         # ========== ADMINS BUTTONS ==========
         elif data == "admins_list":
@@ -2924,6 +2983,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
+            return
         
         elif data == "admins_add":
             if not db.is_super_admin(user.id):
@@ -2936,6 +2996,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Ketik *batal* untuk membatalkan.",
                 parse_mode=ParseMode.MARKDOWN
             )
+            return
         
         elif data == "admins_edit":
             if not db.is_super_admin(user.id):
@@ -2948,6 +3009,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Ketik *batal* untuk membatalkan.",
                 parse_mode=ParseMode.MARKDOWN
             )
+            return
         
         elif data == "admins_remove":
             if not db.is_super_admin(user.id):
@@ -2960,6 +3022,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Ketik *batal* untuk membatalkan.",
                 parse_mode=ParseMode.MARKDOWN
             )
+            return
         
         # ========== BACKUP BUTTONS ==========
         elif data == "backup_create":
@@ -2989,6 +3052,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             else:
                 await query.message.edit_text("❌ Gagal membuat backup.")
+            return
         
         # ========== USER ACTIONS ==========
         elif data == "user_stats":
@@ -3001,7 +3065,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "📊 *STATISTIK USER*\n\n"
                 f"• Total User: {stats['total']}\n"
                 f"• Hari Ini: {stats['today']}\n"
-                f"• Minggu Ini: {stats['week']}\n"
+                f"• Minggu Ini: {stats['week']}\n
                 f"• Bulan Ini: {stats['month']}\n"
                 f"• Aktif 24 Jam: {stats['active_24h']}\n"
                 f"• Aktif 7 Hari: {stats['active_week']}\n"
@@ -3020,6 +3084,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
+            return
         
         elif data == "user_search":
             if not db.is_super_admin(user.id):
@@ -3032,6 +3097,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Ketik *batal* untuk membatalkan.",
                 parse_mode=ParseMode.MARKDOWN
             )
+            return
         
         elif data == "user_block":
             if not db.is_super_admin(user.id):
@@ -3044,6 +3110,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Ketik *batal* untuk membatalkan.",
                 parse_mode=ParseMode.MARKDOWN
             )
+            return
         
         elif data == "user_ban":
             if not db.is_super_admin(user.id):
@@ -3056,6 +3123,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Ketik *batal* untuk membatalkan.",
                 parse_mode=ParseMode.MARKDOWN
             )
+            return
         
         # ========== CONFIRM BROADCAST ==========
         elif data.startswith('confirm_broadcast_'):
@@ -3087,6 +3155,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     buttons=json.loads(broadcast['buttons']) if broadcast['buttons'] else None
                 )
             )
+            return
         
         # No operation button
         elif data == "noop":
@@ -3097,44 +3166,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(
             "❌ Terjadi kesalahan. Silakan coba lagi nanti."
         )
-
-# ==================== FUNGSI KIRIM PROMO ====================
-
-async def send_promo(message, context):
-    """Kirim promo dengan gambar"""
-    try:
-        # Buat button untuk link
-        keyboard = [
-            [InlineKeyboardButton("🤖 BOT OFFICIAL", url="https://t.me/bolapelangi2_bot")],
-            [InlineKeyboardButton("📈 PREDIKSI JITU", url="https://bopel2.vip/ChannelWA-Jadwal-Prediksi")],
-            [InlineKeyboardButton("📢 CHANNEL WA", url="https://bopel2.vip/Channel-Whatsapp")],
-            [InlineKeyboardButton("📢 CHANNEL TG", url="https://bopel2.vip/Channel-Telegram")],
-            [InlineKeyboardButton("🟢 KLAIM BONUS", url="https://bopel2.link/wa")],
-            [InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data="back_to_menu")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        # Coba ambil gambar dari database
-        image_url = "https://i.ibb.co/your-image/promo-banner.jpg"  # Default
-        
-        try:
-            await message.reply_photo(
-                photo=image_url,
-                caption=PROMO_TEXT,
-                parse_mode=ParseMode.MARKDOWN,
-                reply_markup=reply_markup
-            )
-            logger.info("✅ Promo dengan gambar terkirim")
-        except Exception as e:
-            logger.warning(f"⚠️ Gagal kirim gambar: {e}, kirim teks saja")
-            await message.reply_text(
-                text=PROMO_TEXT,
-                parse_mode=ParseMode.MARKDOWN,
-                disable_web_page_preview=True,
-                reply_markup=reply_markup
-            )
-    except Exception as e:
-        logger.error(f"❌ Gagal kirim promo: {e}")
 
 # ==================== MESSAGE HANDLER ====================
 
@@ -3213,6 +3244,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             
             del context.user_data['broadcast_step']
+            return
         
         elif step == 'waiting_image':
             context.user_data['broadcast_step'] = 'waiting_caption'
@@ -3220,6 +3252,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(
                 "📝 Kirim caption untuk gambar (atau ketik - untuk tanpa caption):"
             )
+            return
         
         elif step == 'waiting_caption':
             caption = text if text != '-' else None
@@ -3246,8 +3279,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             
             del context.user_data['broadcast_step']
-        
-        return
+            return
     
     # ===== POST ADD FLOW =====
     if 'post_step' in context.user_data:
@@ -3271,6 +3303,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await update.message.reply_text("❌ Format waktu salah! Gunakan HH:MM (00-23:00-59)")
             except:
                 await update.message.reply_text("❌ Format waktu salah! Gunakan HH:MM")
+            return
         
         elif step == 'text':
             context.user_data['post_text'] = text
@@ -3278,6 +3311,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(
                 "Langkah 3/4: Masukkan URL gambar (atau ketik - untuk tanpa gambar):"
             )
+            return
         
         elif step == 'image':
             image_url = None if text == '-' else text
@@ -3286,6 +3320,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(
                 "Langkah 4/4: Masukkan teks tombol (atau ketik - untuk tanpa tombol):"
             )
+            return
         
         elif step == 'button':
             if text != '-':
@@ -3305,6 +3340,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 
                 await update.message.reply_text(f"✅ Jadwal ID {post_id} berhasil ditambahkan!")
                 del context.user_data['post_step']
+            return
         
         elif step == 'button_url':
             # Simpan dengan tombol
@@ -3319,8 +3355,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
             await update.message.reply_text(f"✅ Jadwal ID {post_id} berhasil ditambahkan!")
             del context.user_data['post_step']
-        
-        return
+            return
     
     # ===== POST ACTION FLOW (edit/delete/toggle) =====
     if 'post_action' in context.user_data:
@@ -3352,6 +3387,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     parse_mode=ParseMode.MARKDOWN
                 )
                 del context.user_data['post_action']
+                return
             
             elif action == 'delete':
                 if db.delete_post(post_id):
@@ -3360,6 +3396,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 else:
                     await update.message.reply_text(f"❌ Gagal menghapus jadwal ID {post_id}.")
                 del context.user_data['post_action']
+                return
             
             elif action == 'toggle':
                 if db.toggle_post(post_id):
@@ -3370,11 +3407,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 else:
                     await update.message.reply_text(f"❌ Gagal mengubah status jadwal ID {post_id}.")
                 del context.user_data['post_action']
+                return
         
         except ValueError:
             await update.message.reply_text("❌ ID harus berupa angka!")
-        
-        return
+            return
     
     # ===== ADMIN ACTION FLOW (search) =====
     if 'admin_action' in context.user_data:
@@ -3466,6 +3503,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             except ValueError:
                 await update.message.reply_text("❌ User ID harus berupa angka!")
+            return
         
         elif step == 'confirm_add':
             if text.lower() == 'ya':
@@ -3480,6 +3518,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("✅ Penambahan admin dibatalkan.")
             
             del context.user_data['admin_step']
+            return
         
         elif step == 'edit_id':
             try:
@@ -3511,6 +3550,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 
             except ValueError:
                 await update.message.reply_text("❌ User ID harus berupa angka!")
+            return
         
         elif step == 'edit_permissions':
             try:
@@ -3539,6 +3579,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 
             except:
                 await update.message.reply_text("❌ Format salah! Gunakan: 1,1,0,1")
+            return
         
         elif step == 'remove_id':
             try:
@@ -3558,6 +3599,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 del context.user_data['admin_step']
             except ValueError:
                 await update.message.reply_text("❌ User ID harus berupa angka!")
+            return
 
 # ==================== WELCOME NEW MEMBER ====================
 
@@ -3656,7 +3698,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def post_init(application: Application):
     """Fungsi setelah bot start"""
     logger.info("=" * 70)
-    logger.info("🤖 BOT BOLAPELANGI 2 ULTIMATE EDITION v4.0 READY!")
+    logger.info("🤖 BOT BOLAPELANGI 2 ULTIMATE EDITION v4.1 READY!")
     logger.info("=" * 70)
     
     try:
@@ -3712,7 +3754,7 @@ async def post_init(application: Application):
         try:
             await application.bot.send_message(
                 chat_id=CHANNEL_ID,
-                text="🤖 *Bot Ultimate Edition v4.0 Aktif*\n\n✅ Sistem auto post & broadcast siap!",
+                text="🤖 *Bot Ultimate Edition v4.1 Aktif*\n\n✅ Sistem auto post & broadcast siap!",
                 parse_mode=ParseMode.MARKDOWN
             )
             logger.info("✅ Pesan startup terkirim ke channel")
@@ -3733,7 +3775,7 @@ def main():
     """Main function"""
     
     print("=" * 70)
-    print("🤖 BOT BOLAPELANGI 2 - ULTIMATE EDITION v4.0")
+    print("🤖 BOT BOLAPELANGI 2 - ULTIMATE EDITION v4.1")
     print("=" * 70)
     print("🔧 FITUR SUPER LENGKAP:")
     print("   ✅ Auto Welcome Member")
@@ -3811,7 +3853,7 @@ def main():
     application.add_error_handler(error_handler)
     
     print("=" * 70)
-    print("📢 BOT RUNNING - ULTIMATE EDITION v4.0")
+    print("📢 BOT RUNNING - ULTIMATE EDITION v4.1")
     print("📢 Fitur: Auto Welcome | Auto Post | Broadcast | Admin Panel | Backup | Logs | Templates")
     print("📢 Database: SQLite dengan auto backup")
     print("📢 Super Admin: @Bolapelangi2 & @bolapelangi_2")
