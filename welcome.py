@@ -901,6 +901,59 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
 
+# ==================== PROMO COMMAND ====================
+
+async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /promo command - Tampilkan promo"""
+    user = update.effective_user
+    
+    # Simpan user ke database
+    db.add_or_update_user(user)
+    db.log_interaction(user.id, '/promo')
+    
+    logger.info(f"🎁 /promo dari {user.first_name} (ID: {user.id})")
+    
+    # Buat button untuk link
+    keyboard = [
+        [InlineKeyboardButton("🤖 BOT OFFICIAL", url="https://t.me/bolapelangi2_bot")],
+        [InlineKeyboardButton("📈 PREDIKSI JITU", url="https://bopel2.vip/ChannelWA-Jadwal-Prediksi")],
+        [InlineKeyboardButton("📢 CHANNEL WA", url="https://bopel2.vip/Channel-Whatsapp")],
+        [InlineKeyboardButton("📢 CHANNEL TG", url="https://bopel2.vip/Channel-Telegram")],
+        [InlineKeyboardButton("🟢 KLAIM BONUS", url="https://bopel2.link/wa")],
+        [InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data="back_to_menu")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    # Coba ambil gambar dari database (jadwal pertama yang punya gambar)
+    image_url = None
+    posts = db.get_all_posts()
+    for post in posts:
+        if post.get('image_url'):
+            image_url = post['image_url']
+            break
+    
+    if not image_url:
+        image_url = "https://i.ibb.co/your-image/promo-banner.jpg"  # Default image
+    
+    # Coba kirim dengan gambar
+    try:
+        await update.message.reply_photo(
+            photo=image_url,
+            caption=PROMO_TEXT,
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=reply_markup
+        )
+        logger.info("✅ Promo dengan gambar terkirim")
+    except Exception as e:
+        logger.warning(f"⚠️ Gagal kirim gambar: {e}, kirim teks saja")
+        # Fallback: kirim teks saja
+        await update.message.reply_text(
+            text=PROMO_TEXT,
+            parse_mode=ParseMode.MARKDOWN,
+            disable_web_page_preview=True,
+            reply_markup=reply_markup
+        )
+
 # ==================== ADMIN PANEL ====================
 
 @admin_required
