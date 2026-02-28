@@ -3,17 +3,33 @@
         "bot_name": "BOLAPELANGI 2 Bot",
         "language": "id",
         "timezone": "Asia/Jakarta",
-        "maintenance_mode": false
+        "maintenance_mode": false,
+        "support_contact": "@admin"
     },
     "messages": {
         "welcome": "👋 Halo {first_name}! Selamat datang di {bot_name}",
         "help": "📚 Gunakan /start untuk memulai",
         "error": "❌ Terjadi kesalahan. Silakan coba lagi.",
-        "unauthorized": "❌ Anda tidak memiliki akses ke fitur ini."
+        "unauthorized": "❌ Anda tidak memiliki akses ke fitur ini.",
+        "maintenance": "🔧 Bot sedang maintenance. Silakan coba nanti.",
+        "success": "✅ Operasi berhasil!",
+        "cancel": "❌ Operasi dibatalkan."
     },
     "limits": {
         "users_per_page": 10,
         "max_broadcast_length": 4096,
-        "max_posts": 50
-    }
-}
+        "max_posts": 50,
+        "max_admins": 20,
+        "max_templates": 30,
+        "max_logs_display": 50
+    },
+    "display": {
+        "date_format": "%Y-%m-%d %H:%M:%S",
+        "short_date": "%Y-%m-%d",
+        "time_format": "%H:%M",
+        "timezone": "Asia/Jakarta"
+    },
+    "notifications": {
+        "new_user": true,
+        "broadcast_complete": true,
+       
