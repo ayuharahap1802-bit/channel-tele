@@ -1,7 +1,7 @@
 """
 TELEGRAM BOT SUPER LENGKAP - BOLAPELANGI 2
-VERSI: ULTIMATE PRO v3.0
-Fitur: Auto Welcome | Auto Post Scheduler | Broadcast | Admin Panel | User Tracking | Full Config via Telegram
+VERSI: ULTIMATE DENGAN DATABASE & BROADCAST
+Fitur: Auto Welcome | Auto Post Scheduler | Broadcast | Admin Panel | User Tracking | Backup | Logs | Templates
 Created for: @bolapelangi2_bot
 Author: Sistem Profesional
 """
@@ -59,203 +59,63 @@ try:
 except ImportError:
     print("⚠️ python-dotenv not installed, using environment variables only")
 
-print("=" * 80)
-print("🔍 MEMULAI BOT BOLAPELANGI 2 ULTIMATE PRO v3.0...")
-print("=" * 80)
+print("=" * 70)
+print("🔍 MEMULAI BOT BOLAPELANGI 2 ULTIMATE EDITION...")
+print("=" * 70)
 
-# ==================== CONFIGURATION CLASS ====================
+# ==================== KONFIGURASI DARI ENVIRONMENT ====================
 
-class BotConfig:
-    """Centralized configuration management"""
-    
-    _instance = None
-    _config = {}
-    
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-    
-    def __init__(self):
-        self.load_config()
-    
-    def load_config(self):
-        """Load configuration from JSON files and environment"""
-        # Default configuration
-        self._config = {
-            'bot': {
-                'name': 'BOLAPELANGI 2 Bot',
-                'version': '3.0.0',
-                'environment': os.getenv('ENVIRONMENT', 'production'),
-                'maintenance_mode': False
-            },
-            'super_admins': [850434834, 8122523608],
-            'database': {
-                'file': os.getenv('DATABASE_FILE', 'bot_database.db'),
-                'backup_enabled': True,
-                'backup_folder': 'backups',
-                'auto_backup_interval': 24
-            },
-            'features': {
-                'welcome_enabled': True,
-                'auto_post_enabled': True,
-                'broadcast_enabled': True,
-                'user_tracking': True,
-                'statistics': True,
-                'admin_logs': True
-            },
-            'broadcast': {
-                'delay_between_messages': 1,
-                'max_per_day': 5,
-                'max_length': 4096,
-                'allow_scheduled': True
-            },
-            'urls': {
-                'login': 'https://bopel2.link/login',
-                'daftar': 'https://bopel2.link/daftar',
-                'claim': 'https://bopel2.link/wa',
-                'bot_official': 'https://t.me/bolapelangi2_bot',
-                'prediksi': 'https://bopel2.vip/ChannelWA-Jadwal-Prediksi',
-                'channel_wa': 'https://bopel2.vip/Channel-Whatsapp',
-                'channel_tg': 'https://bopel2.vip/Channel-Telegram'
-            },
-            'images': {
-                'default_promo': 'https://i.ibb.co/your-image/promo-banner.jpg',
-                'default_welcome': 'https://i.ibb.co/your-image/welcome-banner.jpg'
-            },
-            'limits': {
-                'users_per_page': 10,
-                'max_posts': 50,
-                'max_admins': 20,
-                'max_broadcasts_history': 50
-            },
-            'messages': {
-                'welcome': '👋 Halo {first_name}! Selamat datang di {bot_name}',
-                'help': '📚 Gunakan /start untuk memulai',
-                'error': '❌ Terjadi kesalahan. Silakan coba lagi.',
-                'unauthorized': '❌ Anda tidak memiliki akses ke fitur ini.',
-                'maintenance': '🔧 Bot sedang maintenance. Silakan coba nanti.'
-            },
-            'security': {
-                'max_login_attempts': 5,
-                'session_timeout': 3600,
-                'require_auth_for_admin': True
-            },
-            'logging': {
-                'level': 'INFO',
-                'file': 'logs/bot_activity.log',
-                'max_size_mb': 10,
-                'backup_count': 5
-            }
-        }
-        
-        # Load from config.json if exists
-        config_path = os.path.join('data', 'config.json')
-        if os.path.exists(config_path):
-            try:
-                with open(config_path, 'r') as f:
-                    file_config = json.load(f)
-                    self._deep_update(self._config, file_config)
-                print(f"✅ Loaded config from {config_path}")
-            except Exception as e:
-                print(f"⚠️ Gagal load config.json: {e}")
-        
-        # Override with environment variables
-        if os.getenv('BOT_TOKEN'):
-            self._config['bot']['token'] = os.getenv('BOT_TOKEN')
-        if os.getenv('CHANNEL_ID'):
-            self._config['bot']['channel_id'] = int(os.getenv('CHANNEL_ID'))
-        if os.getenv('DATABASE_FILE'):
-            self._config['database']['file'] = os.getenv('DATABASE_FILE')
-    
-    def _deep_update(self, target, source):
-        """Deep update dictionary"""
-        for key, value in source.items():
-            if key in target and isinstance(target[key], dict) and isinstance(value, dict):
-                self._deep_update(target[key], value)
-            else:
-                target[key] = value
-    
-    def get(self, key: str, default=None):
-        """Get config value by dot notation"""
-        keys = key.split('.')
-        value = self._config
-        for k in keys:
-            if isinstance(value, dict):
-                value = value.get(k)
-                if value is None:
-                    return default
-            else:
-                return default
-        return value
-    
-    def set(self, key: str, value: Any):
-        """Set config value by dot notation"""
-        keys = key.split('.')
-        target = self._config
-        for k in keys[:-1]:
-            if k not in target:
-                target[k] = {}
-            target = target[k]
-        target[keys[-1]] = value
-        
-        # Auto save to file
-        self.save()
-    
-    def save(self):
-        """Save config to file"""
-        try:
-            os.makedirs('data', exist_ok=True)
-            config_path = os.path.join('data', 'config.json')
-            with open(config_path, 'w') as f:
-                json.dump(self._config, f, indent=4)
-            return True
-        except Exception as e:
-            logging.error(f"❌ Gagal save config: {e}")
-            return False
-    
-    @property
-    def token(self):
-        return self.get('bot.token')
-    
-    @property
-    def channel_id(self):
-        return self.get('bot.channel_id', -1003573191693)
-    
-    @property
-    def super_admins(self):
-        return self.get('super_admins', [])
-
-# Initialize config
-config = BotConfig()
-
-# ==================== CONSTANTS ====================
-
-BOT_TOKEN = config.token
-CHANNEL_ID = config.channel_id
-SUPER_ADMINS = config.super_admins
-DATABASE_FILE = config.get('database.file', 'bot_database.db')
+# Baca dari environment variable
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+CHANNEL_ID_STR = os.environ.get("CHANNEL_ID")
+DATABASE_FILE = os.environ.get("DATABASE_FILE", "bot_database.db")
 
 print(f"🔍 BOT_TOKEN: {'ADA' if BOT_TOKEN else 'TIDAK ADA'}")
-print(f"🔍 CHANNEL_ID: {CHANNEL_ID}")
+print(f"🔍 CHANNEL_ID: {CHANNEL_ID_STR}")
 print(f"🔍 DATABASE: {DATABASE_FILE}")
-print(f"✅ SUPER ADMIN: {SUPER_ADMINS}")
 
-# ==================== LOGGING CONFIGURATION ====================
+# Fallback ke default
+if not BOT_TOKEN:
+    BOT_TOKEN = "8793227199:AAEXajy3RDO7SpMSCloj13Z4ubX3DXNvN4M"
+    print("⚠️ Pakai BOT_TOKEN default")
 
+if not CHANNEL_ID_STR:
+    CHANNEL_ID_STR = "-1003573191693"
+    print("⚠️ Pakai CHANNEL_ID default")
+
+# Konversi CHANNEL_ID
+try:
+    CHANNEL_ID = int(CHANNEL_ID_STR)
+    print(f"✅ CHANNEL_ID: {CHANNEL_ID}")
+except:
+    CHANNEL_ID = -1003573191693
+    print(f"⚠️ CHANNEL_ID forced: {CHANNEL_ID}")
+
+print(f"✅ BOT_TOKEN: {BOT_TOKEN[:10]}...{BOT_TOKEN[-5:]}")
+
+# ==================== KONFIGURASI LOGGING ====================
+
+# Buat folder logs jika belum ada
 os.makedirs('logs', exist_ok=True)
-os.makedirs('data', exist_ok=True)
 os.makedirs('backups', exist_ok=True)
+os.makedirs('data', exist_ok=True)
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=getattr(logging, config.get('logging.level', 'INFO')),
+    level=logging.INFO,
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler(config.get('logging.file', 'logs/bot_activity.log'), encoding='utf-8')
+        logging.FileHandler('logs/bot_activity.log', encoding='utf-8')
     ]
 )
 logger = logging.getLogger(__name__)
+
+# ==================== SUPER ADMIN ====================
+
+SUPER_ADMINS = [
+    850434834,      # @Bolapelangi2
+    8122523608      # @bolapelangi_2
+]
 
 # ==================== ENUMS ====================
 
@@ -277,7 +137,7 @@ class PostStatus(Enum):
     INACTIVE = "inactive"
     DELETED = "deleted"
 
-# ==================== TEKS PROMO DARI SCRIPT PERTAMA ====================
+# ==================== TEKS PROMO DEFAULT ====================
 
 PROMO_TEXT = """
 ⚽ *PROMO GILA! CASHBACK 100% MIX PARLAY* ⚽
@@ -302,173 +162,25 @@ PROMO_TEXT = """
 🟢 [KLAIM BONUS](https://bopel2.link/wa)
 
 📌 *Catatan:* 1x/hari, no IP sama, no safety bet
-🚀 *GASPOLL TERUS BOSKU!
+🚀 *GASPOLL TERUS BOSKU!*
 """
-
-# ==================== AUTO POST MANAGER DARI SCRIPT PERTAMA ====================
-
-class AutoPostManager:
-    """Manager untuk menyimpan dan mengelola jadwal auto post (dari script pertama)"""
-    
-    def __init__(self, filename="auto_posts.json"):
-        self.filename = filename
-        self.posts = self.load_posts()
-        self.authorized_users = set()  # User yang diizinkan mengatur bot
-        self.pending_input = {}  # Menyimpan state input user
-    
-    def load_posts(self) -> Dict:
-        """Load jadwal dari file"""
-        try:
-            if os.path.exists(self.filename):
-                with open(self.filename, 'r') as f:
-                    data = json.load(f)
-                    # Konversi string jam ke format yang bisa diproses
-                    for post_id, post in data.items():
-                        if 'time' in post and isinstance(post['time'], str):
-                            hour, minute = map(int, post['time'].split(':'))
-                            post['time_obj'] = time(hour, minute)
-                    logger.info(f"✅ Loaded {len(data)} jadwal dari file")
-                    return data
-            else:
-                # Data default jika file tidak ada
-                default_posts = {
-                    "1": {
-                        "id": "1",
-                        "time": "08:00",
-                        "time_obj": time(8, 0),
-                        "text": "☀️ *SELAMAT PAGI* ☀️\n\nJangan lupa cek promo terbaru kami hari ini!",
-                        "image_url": None,
-                        "active": True
-                    },
-                    "2": {
-                        "id": "2",
-                        "time": "12:00",
-                        "time_obj": time(12, 0),
-                        "text": "⚽ *INFO SIANG* ⚽\n\nMasih bingung cari bettingan? Cek prediksi jitu kami!",
-                        "image_url": None,
-                        "active": True
-                    },
-                    "3": {
-                        "id": "3",
-                        "time": "19:00",
-                        "time_obj": time(19, 0),
-                        "text": PROMO_TEXT,
-                        "image_url": "https://i.ibb.co/your-image/promo-banner.jpg",
-                        "active": True
-                    }
-                }
-                # Tambah time_obj ke default
-                for post_id, post in default_posts.items():
-                    if 'time' in post:
-                        hour, minute = map(int, post['time'].split(':'))
-                        post['time_obj'] = time(hour, minute)
-                return default_posts
-        except Exception as e:
-            logger.error(f"❌ Gagal load jadwal: {e}")
-            return {}
-    
-    def save_posts(self):
-        """Simpan jadwal ke file"""
-        try:
-            # Hapus time_obj sebelum save ke JSON
-            save_data = {}
-            for post_id, post in self.posts.items():
-                save_data[post_id] = {k: v for k, v in post.items() if k != 'time_obj'}
-            with open(self.filename, 'w') as f:
-                json.dump(save_data, f, indent=2)
-            logger.info(f"✅ Saved {len(self.posts)} jadwal ke file")
-        except Exception as e:
-            logger.error(f"❌ Gagal save jadwal: {e}")
-    
-    def add_post(self, post_id: str, time_str: str, text: str, image_url: str = None):
-        """Tambah jadwal baru"""
-        hour, minute = map(int, time_str.split(':'))
-        self.posts[post_id] = {
-            "id": post_id,
-            "time": time_str,
-            "time_obj": time(hour, minute),
-            "text": text,
-            "image_url": image_url,
-            "active": True
-        }
-        self.save_posts()
-    
-    def update_post(self, post_id: str, **kwargs):
-        """Update jadwal"""
-        if post_id in self.posts:
-            if 'time' in kwargs:
-                hour, minute = map(int, kwargs['time'].split(':'))
-                kwargs['time_obj'] = time(hour, minute)
-            self.posts[post_id].update(kwargs)
-            self.save_posts()
-            return True
-        return False
-    
-    def delete_post(self, post_id: str):
-        """Hapus jadwal"""
-        if post_id in self.posts:
-            del self.posts[post_id]
-            self.save_posts()
-            return True
-        return False
-    
-    def get_next_run_time(self) -> Optional[datetime]:
-        """Dapatkan waktu jadwal berikutnya yang akan dijalankan"""
-        now = datetime.now()
-        today = now.date()
-        
-        # Cari jadwal aktif
-        next_run = None
-        for post in self.posts.values():
-            if not post.get('active', True):
-                continue
-            
-            post_time = post['time_obj']
-            run_datetime = datetime.combine(today, post_time)
-            
-            # Jika waktu sudah lewat hari ini, jadwalkan untuk besok
-            if run_datetime <= now:
-                run_datetime += timedelta(days=1)
-            
-            if next_run is None or run_datetime < next_run:
-                next_run = run_datetime
-        
-        return next_run
-    
-    def get_posts_due_now(self) -> List[Dict]:
-        """Dapatkan semua jadwal yang harus dijalankan sekarang"""
-        now = datetime.now()
-        current_time = now.time()
-        due_posts = []
-        
-        for post in self.posts.values():
-            if not post.get('active', True):
-                continue
-            
-            # Cek apakah waktunya cocok (dalam 1 menit ke depan)
-            post_time = post['time_obj']
-            time_diff = abs(datetime.combine(now.date(), post_time) - datetime.combine(now.date(), current_time))
-            if time_diff.total_seconds() < 60:  # Toleransi 1 menit
-                due_posts.append(post)
-        
-        return due_posts
 
 # ==================== DATABASE MANAGER (ENHANCED) ====================
 
 class DatabaseManager:
-    """Enhanced database manager with migrations and backup"""
+    """Manager database SQLite untuk menyimpan semua data bot"""
     
     VERSION = 3
     
     def __init__(self, db_file: str = DATABASE_FILE):
         self.db_file = db_file
-        self._init_database()
-        self._run_migrations()
+        self.init_database()
+        self.run_migrations()
         logger.info("✅ Enhanced Database Manager initialized")
     
     @contextmanager
     def get_connection(self):
-        """Context manager for database connection"""
+        """Context manager untuk koneksi database"""
         conn = sqlite3.connect(self.db_file)
         conn.row_factory = sqlite3.Row
         try:
@@ -481,8 +193,8 @@ class DatabaseManager:
         finally:
             conn.close()
     
-    def _init_database(self):
-        """Initialize database tables"""
+    def init_database(self):
+        """Inisialisasi semua tabel database"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
@@ -494,7 +206,7 @@ class DatabaseManager:
                 )
             ''')
             
-            # Users table
+            # Tabel users
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS users (
                     user_id INTEGER PRIMARY KEY,
@@ -516,7 +228,7 @@ class DatabaseManager:
                 )
             ''')
             
-            # Admins table
+            # Tabel admins
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS admins (
                     user_id INTEGER PRIMARY KEY,
@@ -535,9 +247,9 @@ class DatabaseManager:
                 )
             ''')
             
-            # Auto posts table (terintegrasi dengan database SQLite)
+            # Tabel auto_posts
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS auto_posts_sql (
+                CREATE TABLE IF NOT EXISTS auto_posts (
                     post_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     time TEXT NOT NULL,
                     text TEXT NOT NULL,
@@ -556,7 +268,7 @@ class DatabaseManager:
                 )
             ''')
             
-            # Broadcast messages table
+            # Tabel broadcast_messages
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS broadcast_messages (
                     broadcast_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -580,7 +292,7 @@ class DatabaseManager:
                 )
             ''')
             
-            # Broadcast recipients table
+            # Tabel broadcast_recipients
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS broadcast_recipients (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -595,7 +307,7 @@ class DatabaseManager:
                 )
             ''')
             
-            # User interactions table
+            # Tabel user_interactions
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS user_interactions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -608,7 +320,7 @@ class DatabaseManager:
                 )
             ''')
             
-            # Settings table
+            # Tabel settings
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS settings (
                     key TEXT PRIMARY KEY,
@@ -621,7 +333,7 @@ class DatabaseManager:
                 )
             ''')
             
-            # Logs table
+            # Tabel admin_logs
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS admin_logs (
                     log_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -636,7 +348,7 @@ class DatabaseManager:
                 )
             ''')
             
-            # Templates table
+            # Tabel templates
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS templates (
                     template_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -651,7 +363,7 @@ class DatabaseManager:
                 )
             ''')
             
-            # Insert super admins if not exist
+            # Insert super admins jika belum ada
             for admin_id in SUPER_ADMINS:
                 cursor.execute('''
                     INSERT OR IGNORE INTO admins (user_id, role, can_manage_admins, can_edit_settings)
@@ -660,16 +372,17 @@ class DatabaseManager:
             
             # Insert default settings
             default_settings = [
-                ('welcome_enabled', str(config.get('features.welcome_enabled', True)).lower(), 'boolean', 'Enable welcome message'),
-                ('auto_post_enabled', str(config.get('features.auto_post_enabled', True)).lower(), 'boolean', 'Enable auto posting'),
-                ('broadcast_enabled', str(config.get('features.broadcast_enabled', True)).lower(), 'boolean', 'Enable broadcast feature'),
-                ('broadcast_delay', str(config.get('broadcast.delay_between_messages', 1)), 'integer', 'Delay between broadcast messages (seconds)'),
-                ('max_broadcast_per_day', str(config.get('broadcast.max_per_day', 5)), 'integer', 'Maximum broadcasts per day'),
-                ('bot_name', config.get('bot.name', 'BOLAPELANGI 2 Bot'), 'string', 'Bot display name'),
+                ('welcome_enabled', 'true', 'boolean', 'Enable welcome message'),
+                ('auto_post_enabled', 'true', 'boolean', 'Enable auto posting'),
+                ('broadcast_enabled', 'true', 'boolean', 'Enable broadcast feature'),
+                ('broadcast_delay', '1', 'integer', 'Delay between broadcast messages (seconds)'),
+                ('max_broadcast_per_day', '5', 'integer', 'Maximum broadcasts per day'),
+                ('bot_name', 'BOLAPELANGI 2 Bot', 'string', 'Bot display name'),
                 ('support_contact', '@admin', 'string', 'Support contact'),
-                ('maintenance_mode', str(config.get('bot.maintenance_mode', False)).lower(), 'boolean', 'Maintenance mode'),
-                ('max_broadcast_length', str(config.get('broadcast.max_length', 4096)), 'integer', 'Maximum broadcast message length'),
-                ('users_per_page', str(config.get('limits.users_per_page', 10)), 'integer', 'Users per page in listing'),
+                ('maintenance_mode', 'false', 'boolean', 'Maintenance mode'),
+                ('max_broadcast_length', '4096', 'integer', 'Maximum broadcast message length'),
+                ('users_per_page', '10', 'integer', 'Users per page in listing'),
+                ('auto_backup_enabled', 'true', 'boolean', 'Auto backup enabled'),
             ]
             for key, value, typ, desc in default_settings:
                 cursor.execute('INSERT OR IGNORE INTO settings (key, value, type, description) VALUES (?, ?, ?, ?)', 
@@ -678,7 +391,7 @@ class DatabaseManager:
             # Set version
             cursor.execute('INSERT OR IGNORE INTO db_version (version) VALUES (?)', (self.VERSION,))
     
-    def _run_migrations(self):
+    def run_migrations(self):
         """Run database migrations"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -731,7 +444,7 @@ class DatabaseManager:
     # ========== USER MANAGEMENT ==========
     
     def add_or_update_user(self, user: Any) -> bool:
-        """Enhanced user tracking"""
+        """Tambah atau update user di database"""
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
@@ -757,11 +470,11 @@ class DatabaseManager:
                 ))
                 return True
         except Exception as e:
-            logger.error(f"❌ Failed to update user {user.id}: {e}")
+            logger.error(f"❌ Gagal update user {user.id}: {e}")
             return False
     
     def get_user(self, user_id: int) -> Optional[Dict]:
-        """Get user by ID"""
+        """Ambil data user berdasarkan ID"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
@@ -769,7 +482,7 @@ class DatabaseManager:
             return dict(row) if row else None
     
     def get_all_users(self, include_blocked: bool = False, limit: int = 1000, offset: int = 0) -> List[Dict]:
-        """Get all users with pagination"""
+        """Ambil semua user dengan pagination"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             if include_blocked:
@@ -789,8 +502,8 @@ class DatabaseManager:
             ''', (f'%{query}%', f'%{query}%', f'%{query}%'))
             return [dict(row) for row in cursor.fetchall()]
     
-    def get_user_stats(self) -> Dict:
-        """Get detailed user statistics"""
+    def get_user_count(self) -> Dict:
+        """Dapatkan statistik user lengkap"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
@@ -855,7 +568,7 @@ class DatabaseManager:
             return cursor.rowcount > 0
     
     def ban_user(self, user_id: int, reason: str) -> bool:
-        """Ban a user"""
+        """Ban a user (stronger than block)"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('UPDATE users SET is_banned = 1, ban_reason = ?, is_blocked = 1 WHERE user_id = ?', (reason, user_id))
@@ -877,7 +590,7 @@ class DatabaseManager:
         return UserRole.USER
     
     def is_admin(self, user_id: int) -> bool:
-        """Check if user is admin"""
+        """Cek apakah user adalah admin"""
         if user_id in SUPER_ADMINS:
             return True
         with self.get_connection() as conn:
@@ -886,7 +599,7 @@ class DatabaseManager:
             return cursor.fetchone() is not None
     
     def is_super_admin(self, user_id: int) -> bool:
-        """Check if user is super admin"""
+        """Cek apakah user adalah super admin"""
         if user_id in SUPER_ADMINS:
             return True
         with self.get_connection() as conn:
@@ -895,7 +608,7 @@ class DatabaseManager:
             return cursor.fetchone() is not None
     
     def add_admin(self, user_id: int, added_by: int, permissions: Dict = None) -> bool:
-        """Add new admin with granular permissions"""
+        """Tambah admin baru dengan granular permissions"""
         try:
             if not self.is_super_admin(added_by):
                 return False
@@ -932,11 +645,11 @@ class DatabaseManager:
                 self.log_admin_action(added_by, 'add_admin', 'user', str(user_id), "Added as admin")
                 return True
         except Exception as e:
-            logger.error(f"❌ Failed to add admin {user_id}: {e}")
+            logger.error(f"❌ Gagal tambah admin {user_id}: {e}")
             return False
     
     def remove_admin(self, user_id: int, removed_by: int) -> bool:
-        """Remove admin"""
+        """Hapus admin (hanya oleh super admin)"""
         try:
             if not self.is_super_admin(removed_by):
                 return False
@@ -950,11 +663,11 @@ class DatabaseManager:
                 self.log_admin_action(removed_by, 'remove_admin', 'user', str(user_id), "Removed admin")
                 return cursor.rowcount > 0
         except Exception as e:
-            logger.error(f"❌ Failed to remove admin {user_id}: {e}")
+            logger.error(f"❌ Gagal hapus admin {user_id}: {e}")
             return False
     
     def get_all_admins(self) -> List[Dict]:
-        """Get all admins with details"""
+        """Ambil semua admin"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
@@ -1013,7 +726,7 @@ class DatabaseManager:
     def create_broadcast(self, created_by: int, message_text: str, message_type: str = 'text', 
                          file_id: str = None, caption: str = None, buttons: Dict = None,
                          is_template: bool = False, template_name: str = None) -> int:
-        """Create broadcast with template support"""
+        """Buat broadcast baru"""
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
@@ -1029,11 +742,11 @@ class DatabaseManager:
                 ))
                 return cursor.lastrowid
         except Exception as e:
-            logger.error(f"❌ Failed to create broadcast: {e}")
+            logger.error(f"❌ Gagal create broadcast: {e}")
             return -1
     
     def schedule_broadcast(self, broadcast_id: int, schedule_time: datetime, filter_criteria: Dict = None) -> bool:
-        """Schedule broadcast with filters"""
+        """Jadwalkan broadcast"""
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
@@ -1044,11 +757,11 @@ class DatabaseManager:
                 ''', (schedule_time.isoformat(), json.dumps(filter_criteria) if filter_criteria else None, broadcast_id))
                 return cursor.rowcount > 0
         except Exception as e:
-            logger.error(f"❌ Failed to schedule broadcast: {e}")
+            logger.error(f"❌ Gagal schedule broadcast: {e}")
             return False
     
     def get_pending_broadcasts(self) -> List[Dict]:
-        """Get pending scheduled broadcasts"""
+        """Ambil broadcast yang pending"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
@@ -1060,7 +773,7 @@ class DatabaseManager:
             return [dict(row) for row in cursor.fetchall()]
     
     def get_all_broadcasts(self, limit: int = 50, offset: int = 0) -> List[Dict]:
-        """Get all broadcasts with pagination"""
+        """Ambil semua broadcast"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
@@ -1102,7 +815,7 @@ class DatabaseManager:
             }
     
     def update_broadcast_status(self, broadcast_id: int, status: str, success: int = 0, failed: int = 0):
-        """Update broadcast status"""
+        """Update status broadcast"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
@@ -1112,10 +825,132 @@ class DatabaseManager:
                 WHERE broadcast_id = ?
             ''', (status, success, failed, broadcast_id))
     
+    # ========== TEMPLATES ==========
+    
+    def create_template(self, name: str, template_type: str, content: str, 
+                        variables: List[str] = None, created_by: int = None) -> int:
+        """Create message template"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO templates (name, type, content, variables, created_by)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (name, template_type, content, json.dumps(variables) if variables else None, created_by))
+                return cursor.lastrowid
+        except Exception as e:
+            logger.error(f"❌ Failed to create template: {e}")
+            return -1
+    
+    def get_templates(self, template_type: str = None) -> List[Dict]:
+        """Get all templates"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            if template_type:
+                cursor.execute('SELECT * FROM templates WHERE type = ? ORDER BY name', (template_type,))
+            else:
+                cursor.execute('SELECT * FROM templates ORDER BY name')
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def render_template(self, template_id: int, variables: Dict) -> Optional[str]:
+        """Render template with variables"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT content, variables FROM templates WHERE template_id = ?', (template_id,))
+            row = cursor.fetchone()
+            if not row:
+                return None
+            
+            content = row['content']
+            template_vars = json.loads(row['variables']) if row['variables'] else []
+            
+            for var in template_vars:
+                if var in variables:
+                    content = content.replace(f'{{{var}}}', str(variables[var]))
+            
+            cursor.execute('UPDATE templates SET last_used = CURRENT_TIMESTAMP, use_count = use_count + 1 WHERE template_id = ?', (template_id,))
+            
+            return content
+    
+    # ========== AUTO POST MANAGEMENT ==========
+    
+    def get_all_posts(self, include_inactive: bool = False) -> List[Dict]:
+        """Ambil semua jadwal auto post"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            if include_inactive:
+                cursor.execute('SELECT * FROM auto_posts ORDER BY time')
+            else:
+                cursor.execute('SELECT * FROM auto_posts WHERE is_active = 1 ORDER BY time')
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def get_post(self, post_id: int) -> Optional[Dict]:
+        """Ambil satu post berdasarkan ID"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM auto_posts WHERE post_id = ?', (post_id,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+    
+    def add_post(self, time_str: str, text: str, image_url: str = None, 
+                 button_text: str = None, button_url: str = None, 
+                 created_by: int = None, category: str = 'general',
+                 priority: int = 0) -> int:
+        """Tambah jadwal post baru"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO auto_posts (time, text, image_url, button_text, button_url, created_by, category, priority)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (time_str, text, image_url, button_text, button_url, created_by, category, priority))
+                return cursor.lastrowid
+        except Exception as e:
+            logger.error(f"❌ Gagal tambah post: {e}")
+            return -1
+    
+    def update_post(self, post_id: int, **kwargs) -> bool:
+        """Update jadwal post"""
+        try:
+            fields = []
+            values = []
+            for key, value in kwargs.items():
+                if value is not None:
+                    fields.append(f"{key} = ?")
+                    values.append(value)
+            
+            if not fields:
+                return False
+            
+            values.append(post_id)
+            query = f"UPDATE auto_posts SET {', '.join(fields)} WHERE post_id = ?"
+            
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, values)
+                return cursor.rowcount > 0
+        except Exception as e:
+            logger.error(f"❌ Gagal update post {post_id}: {e}")
+            return False
+    
+    def delete_post(self, post_id: int) -> bool:
+        """Hapus jadwal post"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM auto_posts WHERE post_id = ?', (post_id,))
+            return cursor.rowcount > 0
+    
+    def toggle_post(self, post_id: int) -> bool:
+        """Toggle active status post"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('UPDATE auto_posts SET is_active = NOT is_active WHERE post_id = ?', (post_id,))
+            return cursor.rowcount > 0
+    
     # ========== SETTINGS MANAGEMENT ==========
     
     def get_setting(self, key: str, default: str = None) -> str:
-        """Get setting value"""
+        """Ambil setting"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('SELECT value FROM settings WHERE key = ?', (key,))
@@ -1159,13 +994,9 @@ class DatabaseManager:
                         UPDATE settings SET value = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP
                         WHERE key = ?
                     ''', (value, updated_by, key))
-                
-                if cursor.rowcount > 0:
-                    config.set(key, value)
-                    return True
-                return False
+                return cursor.rowcount > 0
         except Exception as e:
-            logger.error(f"❌ Failed to update setting {key}: {e}")
+            logger.error(f"❌ Gagal update setting {key}: {e}")
             return False
     
     def get_all_settings(self) -> List[Dict]:
@@ -1178,7 +1009,7 @@ class DatabaseManager:
     # ========== INTERACTION LOGGING ==========
     
     def log_interaction(self, user_id: int, command: str, message_text: str = None, response_time: int = None):
-        """Log user interaction"""
+        """Log interaksi user"""
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
@@ -1187,57 +1018,16 @@ class DatabaseManager:
                     VALUES (?, ?, ?, ?)
                 ''', (user_id, command, message_text, response_time))
         except Exception as e:
-            logger.error(f"❌ Failed to log interaction: {e}")
+            logger.error(f"❌ Gagal log interaksi: {e}")
 
-# ==================== INISIALISASI ====================
+# ==================== INISIALISASI DATABASE ====================
 
 db = DatabaseManager()
-post_manager = AutoPostManager()  # Dari script pertama
 
-# ==================== LOAD JSON DATA ====================
-
-def load_initial_data():
-    """Load initial data from JSON files"""
-    try:
-        data_folder = 'data'
-        
-        # Load auto_posts.json ke post_manager
-        posts_path = os.path.join(data_folder, 'auto_posts.json')
-        if os.path.exists(posts_path):
-            with open(posts_path, 'r') as f:
-                posts = json.load(f)
-            
-            if posts:
-                for i, post in enumerate(posts, 1):
-                    post_id = str(i)
-                    if post_id not in post_manager.posts:
-                        post_manager.add_post(
-                            post_id=post_id,
-                            time_str=post.get('time'),
-                            text=post.get('text'),
-                            image_url=post.get('image_url')
-                        )
-                logger.info(f"✅ Loaded {len(posts)} auto posts ke post_manager")
-        
-        # Load templates
-        templates_path = os.path.join(data_folder, 'broadcast_templates.json')
-        if os.path.exists(templates_path):
-            logger.info(f"✅ Broadcast templates available")
-        
-        # Load settings
-        settings_path = os.path.join(data_folder, 'bot_settings.json')
-        if os.path.exists(settings_path):
-            logger.info(f"✅ Bot settings available")
-            
-    except Exception as e:
-        logger.error(f"❌ Failed to load initial data: {e}")
-
-load_initial_data()
-
-# ==================== AUTO POST SCHEDULER (MENGGABUNGKAN KEDUA SCRIPT) ====================
+# ==================== AUTO POST SCHEDULER ====================
 
 class AutoPostScheduler:
-    """Manager untuk auto posting terjadwal (gabungan dari kedua script)"""
+    """Manager untuk auto posting terjadwal"""
     
     def __init__(self):
         self.running = True
@@ -1245,31 +1035,39 @@ class AutoPostScheduler:
     
     async def check_and_send_posts(self, context: ContextTypes.DEFAULT_TYPE):
         """Cek dan kirim postingan yang waktunya sudah tiba"""
+        now = datetime.now()
+        current_time = now.strftime("%H:%M")
+        current_day = now.strftime("%a").lower()
+        
+        # Cek apakah auto post diaktifkan
         if not db.get_setting_with_type('auto_post_enabled', True):
             return
         
-        # Gunakan post_manager dari script pertama
-        due_posts = post_manager.get_posts_due_now()
+        # Ambil semua post aktif
+        posts = db.get_all_posts(include_inactive=False)
         
-        if due_posts:
-            logger.info(f"⏰ Menemukan {len(due_posts)} jadwal yang harus dikirim")
-            for post in due_posts:
-                await self.send_post(context, post)
+        for post in posts:
+            # Cek waktu
+            if post['time'] != current_time:
+                continue
+            
+            # Cek schedule days
+            schedule_days = post.get('schedule_days', 'all')
+            if schedule_days != 'all' and current_day not in schedule_days.split(','):
+                continue
+            
+            await self.send_post(context, post)
     
     async def send_post(self, context: ContextTypes.DEFAULT_TYPE, post: Dict):
         """Kirim postingan ke channel"""
         try:
-            logger.info(f"📢 Mengirim auto post jadwal {post.get('id')} - {post.get('time')}")
+            logger.info(f"📢 Mengirim auto post ID {post['post_id']} - {post['time']}")
             
-            # Buat keyboard default untuk promo (dari script pertama)
-            keyboard = [
-                [InlineKeyboardButton("🤖 BOT OFFICIAL", url="https://t.me/bolapelangi2_bot")],
-                [InlineKeyboardButton("📈 PREDIKSI JITU", url="https://bopel2.vip/ChannelWA-Jadwal-Prediksi")],
-                [InlineKeyboardButton("📢 CHANNEL WA", url="https://bopel2.vip/Channel-Whatsapp")],
-                [InlineKeyboardButton("📢 CHANNEL TG", url="https://bopel2.vip/Channel-Telegram")],
-                [InlineKeyboardButton("🟢 KLAIM BONUS", url="https://bopel2.link/wa")]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
+            # Buat keyboard jika ada button
+            reply_markup = None
+            if post.get('button_text') and post.get('button_url'):
+                keyboard = [[InlineKeyboardButton(post['button_text'], url=post['button_url'])]]
+                reply_markup = InlineKeyboardMarkup(keyboard)
             
             # Kirim dengan gambar jika ada
             if post.get('image_url'):
@@ -1281,7 +1079,7 @@ class AutoPostScheduler:
                         parse_mode=ParseMode.MARKDOWN,
                         reply_markup=reply_markup
                     )
-                    logger.info(f"✅ Auto post {post.get('id')} terkirim dengan gambar")
+                    logger.info(f"✅ Auto post {post['post_id']} terkirim dengan gambar")
                 except Exception as e:
                     logger.warning(f"⚠️ Gagal kirim gambar: {e}, kirim teks saja")
                     await context.bot.send_message(
@@ -1299,44 +1097,17 @@ class AutoPostScheduler:
                     disable_web_page_preview=True,
                     reply_markup=reply_markup
                 )
-                logger.info(f"✅ Auto post {post.get('id')} terkirim")
-            
-            # Jadwalkan pengiriman berikutnya
-            await self.schedule_next_run(context)
+                logger.info(f"✅ Auto post {post['post_id']} terkirim")
             
         except Exception as e:
-            logger.error(f"❌ Gagal auto post: {e}")
-    
-    async def schedule_next_run(self, context: ContextTypes.DEFAULT_TYPE):
-        """Jadwalkan pengecekan berikutnya (dari script pertama)"""
-        next_run = post_manager.get_next_run_time()
-        
-        if next_run:
-            # Hapus job yang sudah ada
-            current_jobs = context.job_queue.get_jobs_by_name('check_posts')
-            for job in current_jobs:
-                job.schedule_removal()
-            
-            # Hitung delay sampai waktu berikutnya
-            now = datetime.now()
-            delay = (next_run - now).total_seconds()
-            
-            # Jadwalkan job baru
-            context.job_queue.run_once(
-                self.check_and_send_posts,
-                when=max(delay, 1),  # Minimal 1 detik
-                name='check_posts'
-            )
-            logger.info(f"📅 Next check scheduled at {next_run.strftime('%Y-%m-%d %H:%M:%S')} (in {delay/60:.1f} minutes)")
-        else:
-            logger.warning("⚠️ Tidak ada jadwal aktif")
+            logger.error(f"❌ Gagal auto post {post['post_id']}: {e}")
 
 scheduler = AutoPostScheduler()
 
 # ==================== BROADCAST MANAGER ====================
 
 class BroadcastManager:
-    """Enhanced broadcast manager with queue and filters"""
+    """Manager untuk mengirim broadcast ke semua user"""
     
     def __init__(self):
         self.current_broadcast = None
@@ -1349,23 +1120,23 @@ class BroadcastManager:
                             message_type: str = 'text', file_id: str = None,
                             caption: str = None, buttons: Dict = None,
                             filter_criteria: Dict = None):
-        """Send broadcast with filters"""
+        """Kirim broadcast ke semua user"""
         
-        users = db.get_all_users() if not filter_criteria else self._filter_users(filter_criteria)
+        # Ambil semua user
+        users = self._filter_users(filter_criteria) if filter_criteria else db.get_all_users()
         total_users = len(users)
         
         if total_users == 0:
-            logger.warning("⚠️ No users to broadcast")
+            logger.warning("⚠️ Tidak ada user untuk broadcast")
             return
         
+        # Update broadcast dengan total recipient
         with db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('''
-                UPDATE broadcast_messages 
-                SET total_recipients = ?, status = 'sending' 
-                WHERE broadcast_id = ?
-            ''', (total_users, broadcast_id))
+            cursor.execute('UPDATE broadcast_messages SET total_recipients = ?, status = "sending" WHERE broadcast_id = ?', 
+                          (total_users, broadcast_id))
         
+        # Buat keyboard jika ada
         reply_markup = None
         if buttons:
             keyboard = []
@@ -1381,9 +1152,10 @@ class BroadcastManager:
             if keyboard:
                 reply_markup = InlineKeyboardMarkup(keyboard)
         
+        # Kirim ke setiap user
         success = 0
         failed = 0
-        delay = db.get_setting_with_type('broadcast_delay', 1)
+        delay = float(db.get_setting('broadcast_delay', '1'))
         
         self.is_sending = True
         self.current_broadcast = broadcast_id
@@ -1391,6 +1163,7 @@ class BroadcastManager:
         for user in users:
             user_id = user['user_id']
             
+            # Skip blocked/banned users
             if user.get('is_blocked') or user.get('is_banned'):
                 continue
             
@@ -1414,6 +1187,7 @@ class BroadcastManager:
                 
                 success += 1
                 
+                # Log recipient success
                 with db.get_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute('''
@@ -1423,8 +1197,9 @@ class BroadcastManager:
                 
             except Exception as e:
                 failed += 1
-                logger.error(f"❌ Failed to send to {user_id}: {e}")
+                logger.error(f"❌ Gagal broadcast ke {user_id}: {e}")
                 
+                # Log recipient failed
                 with db.get_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute('''
@@ -1432,18 +1207,23 @@ class BroadcastManager:
                         VALUES (?, ?, 'failed', ?)
                     ''', (broadcast_id, user_id, str(e)[:200]))
             
+            # Delay untuk menghindari flood
             await asyncio.sleep(delay)
         
+        # Update final status
         db.update_broadcast_status(broadcast_id, 'sent', success, failed)
         
         self.is_sending = False
         self.current_broadcast = None
         
-        logger.info(f"✅ Broadcast {broadcast_id} completed: {success} success, {failed} failed")
+        logger.info(f"✅ Broadcast {broadcast_id} selesai: {success} success, {failed} failed")
         return {'success': success, 'failed': failed, 'total': total_users}
     
     def _filter_users(self, criteria: Dict) -> List[Dict]:
         """Filter users based on criteria"""
+        if not criteria:
+            return db.get_all_users()
+        
         conditions = ["1=1"]
         params = []
         
@@ -1454,6 +1234,10 @@ class BroadcastManager:
         if criteria.get('language'):
             conditions.append("language_code = ?")
             params.append(criteria['language'])
+        
+        if criteria.get('joined_after'):
+            conditions.append("joined_date > ?")
+            params.append(criteria['joined_after'])
         
         if criteria.get('not_blocked'):
             conditions.append("is_blocked = 0")
@@ -1467,21 +1251,33 @@ class BroadcastManager:
             cursor = conn.cursor()
             cursor.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
+    
+    async def process_broadcast_queue(self, context: ContextTypes.DEFAULT_TYPE):
+        """Proses antrian broadcast"""
+        while True:
+            try:
+                if not self.broadcast_queue.empty() and not self.is_sending:
+                    broadcast_data = await self.broadcast_queue.get()
+                    await self.send_broadcast(context, **broadcast_data)
+            except Exception as e:
+                logger.error(f"❌ Error processing broadcast: {e}")
+            await asyncio.sleep(1)
 
 broadcast_manager = BroadcastManager()
 
 # ==================== DECORATORS ====================
 
 def role_required(min_role: UserRole = UserRole.ADMIN):
-    """Decorator for role-based access control"""
+    """Decorator untuk role-based access control"""
     def decorator(func):
         async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
             user = update.effective_user
             user_role = db.get_user_role(user.id)
             
+            # Check maintenance mode
             if db.get_setting_with_type('maintenance_mode', False) and user_role != UserRole.SUPER_ADMIN:
                 await update.message.reply_text(
-                    config.get('messages.maintenance', '🔧 Bot sedang maintenance. Silakan coba nanti.'),
+                    "🔧 *Bot sedang maintenance*\n\nSilakan coba lagi nanti.",
                     parse_mode=ParseMode.MARKDOWN
                 )
                 return
@@ -1494,10 +1290,10 @@ def role_required(min_role: UserRole = UserRole.ADMIN):
             
             if role_levels.get(user_role, 0) < role_levels.get(min_role, 1):
                 await update.message.reply_text(
-                    config.get('messages.unauthorized', '❌ Anda tidak memiliki akses ke fitur ini.'),
+                    "❌ *Akses Ditolak*\n\nAnda tidak memiliki izin untuk menggunakan perintah ini.",
                     parse_mode=ParseMode.MARKDOWN
                 )
-                logger.warning(f"⚠️ Unauthorized access attempt by user {user.id}")
+                logger.warning(f"⚠️ Akses ditolak untuk user {user.id} ({user.first_name})")
                 return
             
             return await func(update, context, *args, **kwargs)
@@ -1507,12 +1303,16 @@ def role_required(min_role: UserRole = UserRole.ADMIN):
 # ==================== COMMAND HANDLERS ====================
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /start command (gabungan dari kedua script)"""
+    """Handle /start command"""
     user = update.effective_user
-    start_time = datetime.now()
     
+    # Simpan user ke database
     db.add_or_update_user(user)
+    db.log_interaction(user.id, '/start')
     
+    logger.info(f"🚀 /start dari {user.first_name} (ID: {user.id}, Username: @{user.username})")
+    
+    # Cek apakah user di-block
     user_data = db.get_user(user.id)
     if user_data and user_data.get('is_banned'):
         await update.message.reply_text(
@@ -1528,48 +1328,42 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
     
-    logger.info(f"🚀 /start from {user.first_name} (ID: {user.id}, @{user.username})")
-    
-    # Teks dari script pertama
     text = (
-        f"Halo *{user.first_name}*! 👋\n\n"
-        f"Selamat datang di *BOLAPELANGI 2 Bot*!\n\n"
-        f"🤖 *Menu Utama:*\n"
-        f"• Gunakan button di bawah untuk akses cepat\n"
-        f"• Klik button LIHAT PROMO untuk promo terbaru\n"
-        f"• Ketik /help untuk bantuan\n\n"
+        f"👋 *Halo {user.first_name}!*\n\n"
+        f"Selamat datang di *{db.get_setting('bot_name')}*\n\n"
+        f"📌 *Layanan Kami:*\n"
+        f"• Info Promo Terbaru\n"
+        f"• Link Login & Daftar\n"
+        f"• Klaim Event Bonus\n"
+        f"• Update Prediksi Jitu\n\n"
+        f"✨ *Menu Tersedia:*\n"
+        f"• Klik tombol di bawah untuk akses cepat\n"
+        f"• Ketik /help untuk bantuan\n"
+        f"• Ketik /promo untuk lihat promo\n\n"
         f"🔥 *GasPoll!* 🔥"
     )
     
-    # Button dari script pertama
+    # Button menu
     keyboard = [
         [
             InlineKeyboardButton("🔐 LOGIN", callback_data='login'),
             InlineKeyboardButton("📝 DAFTAR", callback_data='daftar'),
         ],
         [
-            InlineKeyboardButton("🎁 CLAIM EVENT", callback_data='claim'),
+            InlineKeyboardButton("🎁 CLAIM BONUS", callback_data='claim'),
         ],
         [
             InlineKeyboardButton("📢 LIHAT PROMO", callback_data='promo'),
         ]
     ]
     
-    # Tambah button admin jika user terauthorisasi (dari script pertama)
-    if user.id in post_manager.authorized_users:
-        keyboard.append([InlineKeyboardButton("⚙️ ADMIN PANEL", callback_data='admin_back')])
-    
-    # Tambah button admin dari script kedua
+    # Tambah button admin jika user adalah admin
     if db.is_admin(user.id):
-        # Cek apakah sudah ada button admin, jika belum tambahkan
-        has_admin = any(btn[0].callback_data == 'admin_dashboard' for row in keyboard for btn in row if hasattr(btn[0], 'callback_data'))
-        if not has_admin:
-            keyboard.append([InlineKeyboardButton("⚙️ PANEL ADMIN", callback_data='admin_dashboard')])
+        keyboard.append([InlineKeyboardButton("⚙️ PANEL ADMIN", callback_data='admin_dashboard')])
     
+    # Tambah button super admin
     if db.is_super_admin(user.id):
-        has_super = any(btn[0].callback_data == 'super_admin_dashboard' for row in keyboard for btn in row if hasattr(btn[0], 'callback_data'))
-        if not has_super:
-            keyboard.append([InlineKeyboardButton("⭐ SUPER ADMIN PANEL", callback_data='super_admin_dashboard')])
+        keyboard.append([InlineKeyboardButton("⭐ SUPER ADMIN PANEL", callback_data='super_admin_dashboard')])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -1579,52 +1373,39 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         disable_web_page_preview=True,
         reply_markup=reply_markup
     )
-    
-    response_time = int((datetime.now() - start_time).total_seconds() * 1000)
-    db.log_interaction(user.id, '/start', response_time=response_time)
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /help command (gabungan)"""
+    """Handle /help command"""
     user = update.effective_user
     db.add_or_update_user(user)
+    db.log_interaction(user.id, '/help')
     
     role = db.get_user_role(user.id)
     
-    # Base help text
-    help_text = (
+    text = (
         "📚 *BANTUAN BOT*\n\n"
         "✨ *Perintah untuk Semua User:*\n"
         "• /start - Mulai bot\n"
         "• /promo - Lihat promo terbaru\n"
         "• /help - Tampilkan bantuan ini\n"
         "• /info - Info akun Anda\n"
-        "• /stats - Statistik bot\n"
+        "• /stats - Statistik bot\n\n"
     )
     
-    # Admin commands dari script pertama
-    if user.id in post_manager.authorized_users:
-        help_text += (
-            "\n👑 *Perintah Admin (Auto Post):*\n"
-            "• /list_jadwal - Lihat semua jadwal\n"
-            "• /tambah_jadwal - Tambah jadwal baru\n"
-            "• /edit_jadwal [id] - Edit jadwal\n"
-            "• /hapus_jadwal [id] - Hapus jadwal\n"
-            "• /aktifkan_jadwal [id] - Aktifkan jadwal\n"
-            "• /nonaktifkan_jadwal [id] - Nonaktifkan jadwal\n"
-        )
-    
-    # Admin commands dari script kedua
+    # Tambah perintah admin jika user adalah admin
     if role in [UserRole.ADMIN, UserRole.SUPER_ADMIN]:
-        help_text += (
-            "\n👑 *Perintah Admin Panel:*\n"
+        text += (
+            "\n👑 *Perintah Admin:*\n"
             "• /admin - Dashboard admin\n"
             "• /users - Daftar user\n"
             "• /broadcast - Kirim broadcast\n"
-            "• /posts - Kelola auto post (SQLite)\n"
+            "• /posts - Kelola auto post\n"
+            "• /logs - Lihat log aktivitas\n"
         )
     
+    # Tambah perintah super admin
     if role == UserRole.SUPER_ADMIN:
-        help_text += (
+        text += (
             "\n⭐ *Perintah Super Admin:*\n"
             "• /admins - Kelola admin\n"
             "• /settings - Pengaturan bot\n"
@@ -1632,29 +1413,30 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• /backup - Backup database\n"
             "• /block [user_id] - Blokir user\n"
             "• /unblock [user_id] - Buka blokir\n"
+            "• /ban [user_id] - Ban user\n"
+            "• /templates - Kelola template\n"
         )
     
-    help_text += f"\n📞 *Kontak Support:*\n{db.get_setting('support_contact', '@admin')}"
+    text += f"\n📞 *Kontak Support:*\n{db.get_setting('support_contact', '@admin')}"
     
     keyboard = [[InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data='back_to_menu')]]
     
     await update.message.reply_text(
-        text=help_text,
+        text=text,
         parse_mode=ParseMode.MARKDOWN,
         disable_web_page_preview=True,
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-    
-    db.log_interaction(user.id, '/help')
 
 async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /info command"""
+    """Handle /info command - Lihat info akun"""
     user = update.effective_user
     db.add_or_update_user(user)
     
     user_data = db.get_user(user.id)
     role = db.get_user_role(user.id)
     
+    # Get user stats
     with db.get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute('SELECT COUNT(*) FROM user_interactions WHERE user_id = ?', (user.id,))
@@ -1688,19 +1470,27 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🔰 *Status:* {role_emoji[role]} *{role_text[role]}*\n"
     )
     
+    if role == UserRole.ADMIN:
+        perms = db.get_admin_permissions(user.id)
+        text += f"\n🔑 *Izin Admin:*\n"
+        text += f"• Manage Users: {'✅' if perms.get('can_manage_users') else '❌'}\n"
+        text += f"• Manage Posts: {'✅' if perms.get('can_manage_posts') else '❌'}\n"
+        text += f"• Broadcast: {'✅' if perms.get('can_broadcast') else '❌'}\n"
+        text += f"• View Stats: {'✅' if perms.get('can_view_stats') else '❌'}\n"
+    
     await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-    db.log_interaction(user.id, '/info')
 
 async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /promo command - Tampilkan promo dengan gambar (dari script pertama)"""
+    """Handle /promo command - Tampilkan promo"""
     user = update.effective_user
     
+    # Simpan user ke database
     db.add_or_update_user(user)
     db.log_interaction(user.id, '/promo')
     
     logger.info(f"🎁 /promo dari {user.first_name} (ID: {user.id})")
     
-    # Buat button untuk link (dari script pertama)
+    # Buat button untuk link
     keyboard = [
         [InlineKeyboardButton("🤖 BOT OFFICIAL", url="https://t.me/bolapelangi2_bot")],
         [InlineKeyboardButton("📈 PREDIKSI JITU", url="https://bopel2.vip/ChannelWA-Jadwal-Prediksi")],
@@ -1711,15 +1501,16 @@ async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    # Coba ambil gambar dari jadwal pertama jika ada
+    # Coba ambil gambar dari database (jadwal pertama yang punya gambar)
     image_url = None
-    for post in post_manager.posts.values():
+    posts = db.get_all_posts()
+    for post in posts:
         if post.get('image_url'):
             image_url = post['image_url']
             break
     
     if not image_url:
-        image_url = config.get('images.default_promo', "https://i.ibb.co/your-image/promo-banner.jpg")
+        image_url = "https://i.ibb.co/your-image/promo-banner.jpg"  # Default image
     
     # Coba kirim dengan gambar
     try:
@@ -1732,6 +1523,7 @@ async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.info("✅ Promo dengan gambar terkirim")
     except Exception as e:
         logger.warning(f"⚠️ Gagal kirim gambar: {e}, kirim teks saja")
+        # Fallback: kirim teks saja
         await update.message.reply_text(
             text=PROMO_TEXT,
             parse_mode=ParseMode.MARKDOWN,
@@ -1739,379 +1531,21 @@ async def promo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=reply_markup
         )
 
-# ==================== ADMIN COMMANDS DARI SCRIPT PERTAMA ====================
-
-async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Command untuk mengatur auto post - HANYA UNTUK ADMIN TERTENTU (dari script pertama)"""
-    user = update.effective_user
-    
-    logger.info(f"👑 /admin digunakan oleh {user.first_name} (ID: {user.id})")
-    
-    # Tambahkan user ke authorized list
-    post_manager.authorized_users.add(user.id)
-    
-    text = (
-        "🔧 *PANEL ADMIN AUTO POST*\n\n"
-        "Kelola jadwal posting otomatis ke channel.\n\n"
-        "📋 *Menu:*\n"
-        "• /list_jadwal - Lihat semua jadwal\n"
-        "• /tambah_jadwal - Tambah jadwal baru\n"
-        "• /edit_jadwal [id] - Edit jadwal\n"
-        "• /hapus_jadwal [id] - Hapus jadwal\n"
-        "• /aktifkan_jadwal [id] - Aktifkan jadwal\n"
-        "• /nonaktifkan_jadwal [id] - Nonaktifkan jadwal\n\n"
-        "Atau gunakan tombol di bawah:"
-    )
-    
-    keyboard = [
-        [InlineKeyboardButton("📋 LIST JADWAL", callback_data='admin_list')],
-        [InlineKeyboardButton("➕ TAMBAH JADWAL", callback_data='admin_add')],
-        [InlineKeyboardButton("🔄 CEK JADWAL BERIKUTNYA", callback_data='admin_next')],
-        [InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data='menu_utama')]
-    ]
-    
-    await update.message.reply_text(
-        text=text,
-        parse_mode=ParseMode.MARKDOWN,
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
-
-async def list_jadwal_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Tampilkan semua jadwal auto post (dari script pertama)"""
-    user = update.effective_user
-    
-    if user.id not in post_manager.authorized_users:
-        await update.message.reply_text("❌ Anda tidak diizinkan menggunakan perintah ini.")
-        return
-    
-    if not post_manager.posts:
-        await update.message.reply_text("📋 Belum ada jadwal tersedia.")
-        return
-    
-    text = "📋 *DAFTAR JADWAL AUTO POST*\n\n"
-    
-    for post_id, post in post_manager.posts.items():
-        status = "✅ AKTIF" if post.get('active', True) else "❌ NONAKTIF"
-        has_image = "📷" if post.get('image_url') else "📝"
-        text += f"{has_image} *ID {post_id}:* {post.get('time')} - {status}\n"
-        preview = post.get('text', '')[:50] + ('...' if len(post.get('text', '')) > 50 else '')
-        text += f"   `{preview}`\n\n"
-    
-    text += "\nGunakan /edit_jadwal [id] untuk mengedit."
-    
-    await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-
-async def tambah_jadwal_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Mulai proses tambah jadwal (dari script pertama)"""
-    user = update.effective_user
-    
-    if user.id not in post_manager.authorized_users:
-        await update.message.reply_text("❌ Anda tidak diizinkan menggunakan perintah ini.")
-        return
-    
-    post_manager.pending_input[user.id] = {
-        'action': 'add',
-        'step': 'time'
-    }
-    
-    text = (
-        "🕐 *TAMBAH JADWAL BARU - LANGKAH 1/4*\n\n"
-        "Masukkan waktu pengiriman dalam format *HH:MM* (24 jam)\n"
-        "Contoh: `14:30` untuk jam 2:30 sore\n\n"
-        "Ketik *batal* untuk membatalkan."
-    )
-    
-    await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-
-async def edit_jadwal_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Mulai proses edit jadwal (dari script pertama)"""
-    user = update.effective_user
-    
-    if user.id not in post_manager.authorized_users:
-        await update.message.reply_text("❌ Anda tidak diizinkan menggunakan perintah ini.")
-        return
-    
-    args = context.args
-    if not args:
-        await update.message.reply_text("❌ Gunakan: /edit_jadwal [id]\nContoh: /edit_jadwal 1")
-        return
-    
-    post_id = args[0]
-    if post_id not in post_manager.posts:
-        await update.message.reply_text(f"❌ Jadwal dengan ID {post_id} tidak ditemukan.")
-        return
-    
-    post_manager.pending_input[user.id] = {
-        'action': 'edit',
-        'post_id': post_id,
-        'step': 'field'
-    }
-    
-    post = post_manager.posts[post_id]
-    text = (
-        f"✏️ *EDIT JADWAL ID {post_id}*\n\n"
-        f"Waktu: {post.get('time')}\n"
-        f"Status: {'Aktif' if post.get('active', True) else 'Nonaktif'}\n"
-        f"Gambar: {'Ada' if post.get('image_url') else 'Tidak ada'}\n\n"
-        f"Preview teks:\n{post.get('text', '')[:100]}{'...' if len(post.get('text', '')) > 100 else ''}\n\n"
-        f"Pilih yang ingin diedit:"
-    )
-    
-    keyboard = [
-        [InlineKeyboardButton("🕐 WAKTU", callback_data=f'edit_field_time_{post_id}')],
-        [InlineKeyboardButton("📝 TEKS", callback_data=f'edit_field_text_{post_id}')],
-        [InlineKeyboardButton("📷 GAMBAR", callback_data=f'edit_field_image_{post_id}')],
-        [InlineKeyboardButton("✅ AKTIF/NONAKTIF", callback_data=f'edit_field_active_{post_id}')],
-        [InlineKeyboardButton("🔙 BATAL", callback_data='admin_list')]
-    ]
-    
-    await update.message.reply_text(
-        text=text,
-        parse_mode=ParseMode.MARKDOWN,
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
-
-async def hapus_jadwal_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Hapus jadwal (dari script pertama)"""
-    user = update.effective_user
-    
-    if user.id not in post_manager.authorized_users:
-        await update.message.reply_text("❌ Anda tidak diizinkan menggunakan perintah ini.")
-        return
-    
-    args = context.args
-    if not args:
-        await update.message.reply_text("❌ Gunakan: /hapus_jadwal [id]\nContoh: /hapus_jadwal 1")
-        return
-    
-    post_id = args[0]
-    if post_id not in post_manager.posts:
-        await update.message.reply_text(f"❌ Jadwal dengan ID {post_id} tidak ditemukan.")
-        return
-    
-    post_manager.pending_input[user.id] = {
-        'action': 'delete',
-        'post_id': post_id
-    }
-    
-    post = post_manager.posts[post_id]
-    text = (
-        f"⚠️ *KONFIRMASI HAPUS*\n\n"
-        f"Yakin ingin menghapus jadwal ID {post_id}?\n"
-        f"Waktu: {post.get('time')}\n\n"
-        f"Ketik *ya* untuk menghapus, atau *tidak* untuk membatalkan."
-    )
-    
-    await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-
-async def aktifkan_jadwal_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Aktifkan jadwal (dari script pertama)"""
-    user = update.effective_user
-    
-    if user.id not in post_manager.authorized_users:
-        await update.message.reply_text("❌ Anda tidak diizinkan menggunakan perintah ini.")
-        return
-    
-    args = context.args
-    if not args:
-        await update.message.reply_text("❌ Gunakan: /aktifkan_jadwal [id]\nContoh: /aktifkan_jadwal 1")
-        return
-    
-    post_id = args[0]
-    if post_id not in post_manager.posts:
-        await update.message.reply_text(f"❌ Jadwal dengan ID {post_id} tidak ditemukan.")
-        return
-    
-    post_manager.update_post(post_id, active=True)
-    await update.message.reply_text(f"✅ Jadwal ID {post_id} telah diaktifkan.")
-    
-    await scheduler.schedule_next_run(context)
-
-async def nonaktifkan_jadwal_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Nonaktifkan jadwal (dari script pertama)"""
-    user = update.effective_user
-    
-    if user.id not in post_manager.authorized_users:
-        await update.message.reply_text("❌ Anda tidak diizinkan menggunakan perintah ini.")
-        return
-    
-    args = context.args
-    if not args:
-        await update.message.reply_text("❌ Gunakan: /nonaktifkan_jadwal [id]\nContoh: /nonaktifkan_jadwal 1")
-        return
-    
-    post_id = args[0]
-    if post_id not in post_manager.posts:
-        await update.message.reply_text(f"❌ Jadwal dengan ID {post_id} tidak ditemukan.")
-        return
-    
-    post_manager.update_post(post_id, active=False)
-    await update.message.reply_text(f"✅ Jadwal ID {post_id} telah dinonaktifkan.")
-    
-    await scheduler.schedule_next_run(context)
-
-# ==================== MESSAGE HANDLER UNTUK INPUT (dari script pertama) ====================
-
-async def handle_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle input dari user (untuk proses tambah/edit)"""
-    user = update.effective_user
-    text = update.message.text
-    
-    if user.id not in post_manager.pending_input:
-        return
-    
-    state = post_manager.pending_input[user.id]
-    
-    if text.lower() == 'batal':
-        del post_manager.pending_input[user.id]
-        await update.message.reply_text("✅ Proses dibatalkan.")
-        return
-    
-    if state['action'] == 'add':
-        await handle_add_input(update, context, state)
-    elif state['action'] == 'edit':
-        await handle_edit_input(update, context, state)
-    elif state['action'] == 'delete':
-        await handle_delete_input(update, context, state)
-
-async def handle_add_input(update: Update, context: ContextTypes.DEFAULT_TYPE, state: Dict):
-    """Handle input untuk tambah jadwal"""
-    user = update.effective_user
-    text = update.message.text
-    
-    if state['step'] == 'time':
-        try:
-            hour, minute = map(int, text.split(':'))
-            if hour < 0 or hour > 23 or minute < 0 or minute > 59:
-                raise ValueError
-            
-            state['time'] = text
-            state['step'] = 'text'
-            
-            await update.message.reply_text(
-                "📝 *LANGKAH 2/4*\n\n"
-                "Masukkan teks yang ingin dikirim.\n"
-                "Gunakan format *Markdown* untuk bold/italic/link.\n\n"
-                "Ketik *batal* untuk membatalkan.",
-                parse_mode=ParseMode.MARKDOWN
-            )
-        except:
-            await update.message.reply_text(
-                "❌ Format waktu salah! Gunakan HH:MM (contoh: 14:30)\n"
-                "Ketik *batal* untuk membatalkan.",
-                parse_mode=ParseMode.MARKDOWN
-            )
-    
-    elif state['step'] == 'text':
-        state['text'] = text
-        state['step'] = 'image'
-        
-        await update.message.reply_text(
-            "📷 *LANGKAH 3/4*\n\n"
-            "Masukkan URL gambar (opsional).\n"
-            "Ketik *-* jika tidak pakai gambar.\n\n"
-            "Ketik *batal* untuk membatalkan.",
-            parse_mode=ParseMode.MARKDOWN
-        )
-    
-    elif state['step'] == 'image':
-        image_url = None if text == '-' else text
-        state['image_url'] = image_url
-        state['step'] = 'confirm'
-        
-        confirm_text = (
-            "🔍 *KONFIRMASI JADWAL BARU*\n\n"
-            f"🕐 Waktu: {state['time']}\n"
-            f"📷 Gambar: {'Ada' if image_url else 'Tidak ada'}\n\n"
-            f"📝 Teks:\n{state['text']}\n\n"
-            f"Ketik *simpan* untuk menyimpan, atau *batal* untuk membatalkan."
-        )
-        
-        await update.message.reply_text(confirm_text, parse_mode=ParseMode.MARKDOWN)
-    
-    elif state['step'] == 'confirm':
-        if text.lower() == 'simpan':
-            new_id = str(len(post_manager.posts) + 1)
-            while new_id in post_manager.posts:
-                new_id = str(int(new_id) + 1)
-            
-            post_manager.add_post(
-                post_id=new_id,
-                time_str=state['time'],
-                text=state['text'],
-                image_url=state['image_url']
-            )
-            
-            del post_manager.pending_input[user.id]
-            await update.message.reply_text(f"✅ Jadwal ID {new_id} berhasil ditambahkan!")
-            
-            await scheduler.schedule_next_run(context)
-        else:
-            del post_manager.pending_input[user.id]
-            await update.message.reply_text("❌ Proses dibatalkan.")
-
-async def handle_edit_input(update: Update, context: ContextTypes.DEFAULT_TYPE, state: Dict):
-    """Handle input untuk edit jadwal"""
-    user = update.effective_user
-    text = update.message.text
-    post_id = state['post_id']
-    
-    if state['step'] == 'time':
-        try:
-            hour, minute = map(int, text.split(':'))
-            if hour < 0 or hour > 23 or minute < 0 or minute > 59:
-                raise ValueError
-            
-            post_manager.update_post(post_id, time=text)
-            del post_manager.pending_input[user.id]
-            await update.message.reply_text(f"✅ Waktu jadwal ID {post_id} diupdate ke {text}")
-            
-            await scheduler.schedule_next_run(context)
-        except:
-            await update.message.reply_text("❌ Format waktu salah! Gunakan HH:MM")
-    
-    elif state['step'] == 'text':
-        post_manager.update_post(post_id, text=text)
-        del post_manager.pending_input[user.id]
-        await update.message.reply_text(f"✅ Teks jadwal ID {post_id} telah diupdate")
-    
-    elif state['step'] == 'image':
-        image_url = None if text == '-' else text
-        post_manager.update_post(post_id, image_url=image_url)
-        del post_manager.pending_input[user.id]
-        await update.message.reply_text(f"✅ Gambar jadwal ID {post_id} telah diupdate")
-
-async def handle_delete_input(update: Update, context: ContextTypes.DEFAULT_TYPE, state: Dict):
-    """Handle input untuk hapus jadwal"""
-    user = update.effective_user
-    text = update.message.text.lower()
-    post_id = state['post_id']
-    
-    if text == 'ya':
-        post_manager.delete_post(post_id)
-        del post_manager.pending_input[user.id]
-        await update.message.reply_text(f"✅ Jadwal ID {post_id} telah dihapus")
-        
-        await scheduler.schedule_next_run(context)
-    elif text == 'tidak':
-        del post_manager.pending_input[user.id]
-        await update.message.reply_text("✅ Penghapusan dibatalkan")
-    else:
-        await update.message.reply_text("❌ Ketik *ya* atau *tidak*", parse_mode=ParseMode.MARKDOWN)
-
-# ==================== ADMIN DASHBOARD (dari script kedua) ====================
+# ==================== ADMIN DASHBOARD ====================
 
 @role_required(UserRole.ADMIN)
-async def admin_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /admin command - Dashboard admin (dari script kedua)"""
+async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /admin command - Dashboard admin"""
     user = update.effective_user
-    role = db.get_user_role(user.id)
+    db.log_interaction(user.id, '/admin')
     
-    user_stats = db.get_user_stats()
+    # Get stats
+    user_stats = db.get_user_count()
     posts = db.get_all_posts()
     active_posts = sum(1 for p in posts if p['is_active'])
     broadcast_stats = db.get_broadcast_stats()
     
+    # Get pending tasks
     with db.get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute('SELECT COUNT(*) FROM broadcast_messages WHERE status = "scheduled"')
@@ -2124,13 +1558,13 @@ async def admin_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         "⚙️ *DASHBOARD ADMIN*\n\n"
         f"👤 *Admin:* {user.first_name}\n"
         f"🆔 *ID:* `{user.id}`\n"
-        f"👑 *Level:* {'⭐ SUPER ADMIN' if role == UserRole.SUPER_ADMIN else '👑 ADMIN'}\n\n"
+        f"👑 *Level:* {'⭐ SUPER ADMIN' if db.is_super_admin(user.id) else '👑 ADMIN'}\n\n"
         f"📊 *STATISTIK BOT*\n"
         f"• Total User: {user_stats['total']}\n"
         f"• User Baru Hari Ini: {user_stats['today']}\n"
         f"• User Aktif 24h: {user_stats['active_24h']}\n"
         f"• User Diblokir: {user_stats['blocked']}\n\n"
-        f"📅 *AUTO POST (SQLite)*\n"
+        f"📅 *AUTO POST*\n"
         f"• Total Jadwal: {len(posts)}\n"
         f"• Jadwal Aktif: {active_posts}\n\n"
         f"📢 *BROADCAST*\n"
@@ -2138,32 +1572,41 @@ async def admin_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         f"• Terjadwal: {scheduled_broadcasts}\n"
         f"• Success Rate: {broadcast_stats['success_rate']:.1f}%\n\n"
         f"📋 *AKTIVITAS*\n"
-        f"• Log Hari Ini: {today_logs}\n"
+        f"• Log Hari Ini: {today_logs}\n\n"
+        f"📌 *Menu Admin:*"
     )
     
+    # Build menu based on permissions
     keyboard = []
-    perms = db.get_admin_permissions(user.id) if role == UserRole.ADMIN else {}
     
-    if role == UserRole.SUPER_ADMIN or perms.get('can_manage_users', True):
+    perms = db.get_admin_permissions(user.id) if db.get_user_role(user.id) == UserRole.ADMIN else {
+        'can_manage_users': True,
+        'can_manage_posts': True,
+        'can_broadcast': True,
+        'can_view_stats': True
+    }
+    
+    if perms.get('can_manage_users'):
         keyboard.append([InlineKeyboardButton("👥 MANAJEMEN USER", callback_data='admin_users')])
-    if role == UserRole.SUPER_ADMIN or perms.get('can_broadcast', True):
+    
+    if perms.get('can_broadcast'):
         keyboard.append([InlineKeyboardButton("📢 BROADCAST", callback_data='admin_broadcast')])
-    if role == UserRole.SUPER_ADMIN or perms.get('can_manage_posts', True):
-        keyboard.append([InlineKeyboardButton("📅 AUTO POST (SQLite)", callback_data='admin_posts')])
-    if role == UserRole.SUPER_ADMIN or perms.get('can_view_stats', True):
+    
+    if perms.get('can_manage_posts'):
+        keyboard.append([InlineKeyboardButton("📅 AUTO POST", callback_data='admin_posts')])
+    
+    if perms.get('can_view_stats'):
         keyboard.append([InlineKeyboardButton("📊 STATISTIK", callback_data='admin_stats')])
         keyboard.append([InlineKeyboardButton("📋 LOG AKTIVITAS", callback_data='admin_logs')])
     
-    if role == UserRole.SUPER_ADMIN:
+    # Super admin only
+    if db.is_super_admin(user.id):
         keyboard.extend([
             [InlineKeyboardButton("👑 KELOLA ADMIN", callback_data='admin_manage_admins')],
             [InlineKeyboardButton("⚙️ PENGATURAN", callback_data='admin_settings')],
-            [InlineKeyboardButton("💾 BACKUP", callback_data='admin_backup')],
+            [InlineKeyboardButton("💾 BACKUP & RESTORE", callback_data='admin_backup')],
+            [InlineKeyboardButton("📝 TEMPLATE", callback_data='admin_templates')],
         ])
-    
-    # Tambahkan link ke panel auto post dari script pertama
-    if user.id in post_manager.authorized_users:
-        keyboard.append([InlineKeyboardButton("📅 AUTO POST (JSON)", callback_data='admin_back')])
     
     keyboard.append([InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data='back_to_menu')])
     
@@ -2173,21 +1616,24 @@ async def admin_panel_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
     
-    db.log_interaction(user.id, '/admin')
     db.log_admin_action(user.id, 'view_dashboard', 'system', 'admin', 'Viewed admin dashboard')
 
-# ==================== USER MANAGEMENT (dari script kedua) ====================
+# ==================== USER MANAGEMENT ====================
 
 @role_required(UserRole.ADMIN)
 async def users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /users command"""
+    """Handle /users command - Lihat daftar user"""
     user = update.effective_user
-    perms = db.get_admin_permissions(user.id) if db.get_user_role(user.id) == UserRole.ADMIN else {'can_manage_users': True}
+    db.log_interaction(user.id, '/users')
     
-    if not perms.get('can_manage_users') and db.get_user_role(user.id) != UserRole.SUPER_ADMIN:
-        await update.message.reply_text("❌ Anda tidak memiliki izin untuk mengelola user.")
-        return
+    # Check permissions
+    if db.get_user_role(user.id) == UserRole.ADMIN:
+        perms = db.get_admin_permissions(user.id)
+        if not perms.get('can_manage_users', True):
+            await update.message.reply_text("❌ Anda tidak memiliki izin untuk mengelola user.")
+            return
     
+    # Parse args
     args = context.args
     page = 1
     search_query = None
@@ -2213,16 +1659,16 @@ async def users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = f"📋 *DAFTAR USER (Halaman {page}/{total_pages})*\n\n"
         text += f"Total: {total} user\n\n"
     
-    for u in users[:10]:
+    for u in users:
         status = "⛔" if u.get('is_blocked') else "✅"
         banned = "🚫" if u.get('is_banned') else ""
         role = "👑" if db.is_admin(u['user_id']) else "👤"
-        
         text += f"{status}{banned}{role} `{u['user_id']}` - {u['first_name']}"
         if u.get('username'):
             text += f" @{u['username']}"
         text += f"\n   📅 {u['joined_date'][:10]} | 🕐 {u['last_active'][:16]}\n"
     
+    # Navigation buttons
     keyboard = []
     if not search_query and total_pages > 1:
         nav_row = []
@@ -2233,10 +1679,12 @@ async def users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             nav_row.append(InlineKeyboardButton("▶️", callback_data=f'users_page_{page+1}'))
         keyboard.append(nav_row)
     
+    # Action buttons
     action_row = []
     if db.is_super_admin(user.id):
         action_row.append(InlineKeyboardButton("🔍 SEARCH", callback_data='user_search'))
         action_row.append(InlineKeyboardButton("⛔ BLOCK", callback_data='user_block'))
+        action_row.append(InlineKeyboardButton("🚫 BAN", callback_data='user_ban'))
     keyboard.append(action_row)
     
     keyboard.append([InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')])
@@ -2246,15 +1694,78 @@ async def users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode=ParseMode.MARKDOWN,
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
+
+@super_admin_required
+async def block_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /block command - Blokir user"""
+    if not context.args:
+        await update.message.reply_text("❌ Gunakan: /block [user_id]")
+        return
     
-    db.log_interaction(user.id, '/users')
+    try:
+        target_id = int(context.args[0])
+        
+        # Cek jangan block super admin
+        if target_id in SUPER_ADMINS:
+            await update.message.reply_text("❌ Tidak bisa memblokir super admin!")
+            return
+        
+        if db.block_user(target_id, "Blocked by admin"):
+            await update.message.reply_text(f"✅ User `{target_id}` telah diblokir.", parse_mode=ParseMode.MARKDOWN)
+            db.log_admin_action(update.effective_user.id, 'block_user', 'user', str(target_id), "Blocked user")
+        else:
+            await update.message.reply_text(f"❌ User `{target_id}` tidak ditemukan.", parse_mode=ParseMode.MARKDOWN)
+    except ValueError:
+        await update.message.reply_text("❌ ID user harus berupa angka!")
 
-# ==================== SUPER ADMIN COMMANDS (dari script kedua) ====================
+@super_admin_required
+async def unblock_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /unblock command - Buka blokir user"""
+    if not context.args:
+        await update.message.reply_text("❌ Gunakan: /unblock [user_id]")
+        return
+    
+    try:
+        target_id = int(context.args[0])
+        
+        if db.unblock_user(target_id):
+            await update.message.reply_text(f"✅ User `{target_id}` telah dibuka blokirnya.", parse_mode=ParseMode.MARKDOWN)
+            db.log_admin_action(update.effective_user.id, 'unblock_user', 'user', str(target_id), "Unblocked user")
+        else:
+            await update.message.reply_text(f"❌ User `{target_id}` tidak ditemukan.", parse_mode=ParseMode.MARKDOWN)
+    except ValueError:
+        await update.message.reply_text("❌ ID user harus berupa angka!")
 
-@role_required(UserRole.SUPER_ADMIN)
+@super_admin_required
+async def ban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /ban command - Ban user"""
+    if not context.args:
+        await update.message.reply_text("❌ Gunakan: /ban [user_id]")
+        return
+    
+    try:
+        target_id = int(context.args[0])
+        
+        if target_id in SUPER_ADMINS:
+            await update.message.reply_text("❌ Tidak bisa mem-ban super admin!")
+            return
+        
+        context.user_data['ban_target'] = target_id
+        context.user_data['ban_step'] = 'reason'
+        await update.message.reply_text(
+            f"📝 Masukkan alasan ban untuk user `{target_id}`:",
+            parse_mode=ParseMode.MARKDOWN
+        )
+    except ValueError:
+        await update.message.reply_text("❌ ID user harus berupa angka!")
+
+# ==================== ADMIN MANAGEMENT ====================
+
+@super_admin_required
 async def admins_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /admins command"""
+    """Handle /admins command - Kelola admin"""
     user = update.effective_user
+    db.log_interaction(user.id, '/admins')
     
     admins = db.get_all_admins()
     
@@ -2280,6 +1791,7 @@ async def admins_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     keyboard = [
         [InlineKeyboardButton("➕ TAMBAH ADMIN", callback_data='admins_add')],
+        [InlineKeyboardButton("✏️ EDIT PERMISSIONS", callback_data='admins_edit')],
         [InlineKeyboardButton("➖ HAPUS ADMIN", callback_data='admins_remove')],
         [InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')]
     ]
@@ -2289,13 +1801,208 @@ async def admins_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode=ParseMode.MARKDOWN,
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-    
-    db.log_interaction(user.id, '/admins')
 
-@role_required(UserRole.SUPER_ADMIN)
-async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /settings command"""
+# ==================== BROADCAST SYSTEM ====================
+
+@role_required(UserRole.ADMIN)
+async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /broadcast command - Kirim broadcast"""
     user = update.effective_user
+    db.log_interaction(user.id, '/broadcast')
+    
+    # Check permissions
+    if db.get_user_role(user.id) == UserRole.ADMIN:
+        perms = db.get_admin_permissions(user.id)
+        if not perms.get('can_broadcast', True):
+            await update.message.reply_text("❌ Anda tidak memiliki izin untuk broadcast.")
+            return
+    
+    # Check daily limit
+    if db.get_user_role(user.id) != UserRole.SUPER_ADMIN:
+        with db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT COUNT(*) FROM broadcast_messages 
+                WHERE created_by = ? AND date(created_at) = date("now")
+            ''', (user.id,))
+            today_count = cursor.fetchone()[0]
+            
+            max_per_day = db.get_setting_with_type('max_broadcast_per_day', 5)
+            
+            if today_count >= max_per_day:
+                await update.message.reply_text(
+                    f"❌ Anda telah mencapai batas broadcast hari ini ({max_per_day}).\n"
+                    f"Coba lagi besok atau hubungi super admin."
+                )
+                return
+    
+    text = (
+        "📢 *SISTEM BROADCAST*\n\n"
+        "Pilih jenis broadcast:\n\n"
+        "1️⃣ *Broadcast Teks* - Kirim pesan teks ke semua user\n"
+        "2️⃣ *Broadcast dengan Gambar* - Kirim pesan + gambar\n"
+        "3️⃣ *Lihat Riwayat* - Lihat broadcast sebelumnya\n\n"
+        "Klik tombol di bawah untuk memulai:"
+    )
+    
+    keyboard = [
+        [InlineKeyboardButton("📝 BROADCAST TEKS", callback_data='broadcast_text')],
+        [InlineKeyboardButton("🖼️ BROADCAST + GAMBAR", callback_data='broadcast_image')],
+        [InlineKeyboardButton("📋 LIHAT RIWAYAT", callback_data='broadcast_history')],
+        [InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')]
+    ]
+    
+    await update.message.reply_text(
+        text=text,
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+# ==================== AUTO POST MANAGEMENT ====================
+
+@role_required(UserRole.ADMIN)
+async def posts_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /posts command - Kelola auto post"""
+    user = update.effective_user
+    db.log_interaction(user.id, '/posts')
+    
+    # Check permissions
+    if db.get_user_role(user.id) == UserRole.ADMIN:
+        perms = db.get_admin_permissions(user.id)
+        if not perms.get('can_manage_posts', True):
+            await update.message.reply_text("❌ Anda tidak memiliki izin untuk mengelola auto post.")
+            return
+    
+    posts = db.get_all_posts(include_inactive=True)
+    
+    text = "📅 *MANAJEMEN AUTO POST*\n\n"
+    
+    if posts:
+        for post in posts:
+            status = "✅ AKTIF" if post['is_active'] else "❌ NONAKTIF"
+            text += f"🆔 *{post['post_id']}* | {post['time']} | {status}\n"
+            preview = post['text'][:50] + ('...' if len(post['text']) > 50 else '')
+            text += f"   `{preview}`\n"
+            if post.get('image_url'):
+                text += f"   📷 Ada Gambar\n"
+            if post.get('category'):
+                text += f"   📂 Kategori: {post['category']}\n"
+            text += "\n"
+    else:
+        text += "Belum ada jadwal tersedia.\n\n"
+    
+    text += "Pilih menu di bawah:"
+    
+    keyboard = [
+        [InlineKeyboardButton("➕ TAMBAH JADWAL", callback_data='posts_add')],
+        [InlineKeyboardButton("✏️ EDIT JADWAL", callback_data='posts_edit')],
+        [InlineKeyboardButton("❌ HAPUS JADWAL", callback_data='posts_delete')],
+        [InlineKeyboardButton("✅ AKTIFKAN/NONAKTIFKAN", callback_data='posts_toggle')],
+        [InlineKeyboardButton("📋 LIHAT SEMUA", callback_data='posts_list')],
+        [InlineKeyboardButton("📂 BY CATEGORY", callback_data='posts_categories')],
+        [InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')]
+    ]
+    
+    await update.message.reply_text(
+        text=text,
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+# ==================== STATISTICS ====================
+
+@role_required(UserRole.ADMIN)
+async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /stats command - Lihat statistik lengkap"""
+    user = update.effective_user
+    db.log_interaction(user.id, '/stats')
+    
+    # Check permissions
+    if db.get_user_role(user.id) == UserRole.ADMIN:
+        perms = db.get_admin_permissions(user.id)
+        if not perms.get('can_view_stats', True):
+            await update.message.reply_text("❌ Anda tidak memiliki izin untuk melihat statistik.")
+            return
+    
+    user_stats = db.get_user_count()
+    posts = db.get_all_posts()
+    broadcast_stats = db.get_broadcast_stats()
+    
+    # Hitung interaksi hari ini
+    with db.get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT COUNT(*) as today FROM user_interactions WHERE date(timestamp) = date("now")')
+        interactions_today = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM user_interactions')
+        total_interactions = cursor.fetchone()[0]
+        
+        # Top commands
+        cursor.execute('''
+            SELECT command, COUNT(*) as count 
+            FROM user_interactions 
+            GROUP BY command 
+            ORDER BY count DESC 
+            LIMIT 5
+        ''')
+        top_commands = [dict(row) for row in cursor.fetchall()]
+    
+    text = (
+        "📊 *STATISTIK BOT LENGKAP*\n\n"
+        "👥 *USER STATISTICS*\n"
+        f"• Total User: {user_stats['total']}\n"
+        f"• User Baru Hari Ini: {user_stats['today']}\n"
+        f"• User Baru Minggu Ini: {user_stats['week']}\n"
+        f"• User Baru Bulan Ini: {user_stats['month']}\n"
+        f"• User Aktif (24h): {user_stats['active_24h']}\n"
+        f"• User Aktif (7 hari): {user_stats['active_week']}\n"
+        f"• User Diblokir: {user_stats['blocked']}\n"
+        f"• User Dibanned: {user_stats['banned']}\n\n"
+    )
+    
+    if user_stats['languages']:
+        text += "🌍 *Top Languages*\n"
+        for lang in user_stats['languages']:
+            text += f"• {lang['language_code']}: {lang['count']} user\n"
+        text += "\n"
+    
+    text += (
+        "📅 *AUTO POST*\n"
+        f"• Total Jadwal: {len(posts)}\n"
+        f"• Jadwal Aktif: {sum(1 for p in posts if p['is_active'])}\n\n"
+        "📢 *BROADCAST*\n"
+        f"• Total Broadcast: {broadcast_stats['total']}\n"
+        f"• Broadcast Terkirim: {broadcast_stats['sent']}\n"
+        f"• Terjadwal: {broadcast_stats['scheduled']}\n"
+        f"• Total Pesan Terkirim: {broadcast_stats['total_success']}\n"
+        f"• Success Rate: {broadcast_stats['success_rate']:.1f}%\n\n"
+        "📋 *INTERAKSI*\n"
+        f"• Interaksi Hari Ini: {interactions_today}\n"
+        f"• Total Interaksi: {total_interactions}\n"
+    )
+    
+    if top_commands:
+        text += "\n📌 *Top Commands*\n"
+        for cmd in top_commands:
+            text += f"• /{cmd['command']}: {cmd['count']}x\n"
+    
+    text += f"\n⚙️ *VERSI BOT*\n• Ultimate Edition v3.0"
+    
+    keyboard = [[InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')]]
+    
+    await update.message.reply_text(
+        text=text,
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+# ==================== SETTINGS ====================
+
+@super_admin_required
+async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /settings command - Pengaturan bot"""
+    user = update.effective_user
+    db.log_interaction(user.id, '/settings')
     
     settings = db.get_all_settings()
     
@@ -2339,19 +2046,18 @@ async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode=ParseMode.MARKDOWN,
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-    
-    db.log_interaction(user.id, '/settings')
 
-@role_required(UserRole.SUPER_ADMIN)
+@super_admin_required
 async def set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /set command"""
+    """Handle /set command - Ubah setting"""
     if len(context.args) < 2:
-        await update.message.reply_text("❌ Gunakan: /set [key] [value]\nContoh: /set bot_name 'Nama Bot'")
+        await update.message.reply_text("❌ Gunakan: /set [key] [value]")
         return
     
     key = context.args[0]
     value = ' '.join(context.args[1:]).strip("'\"")
     
+    # Determine type
     if value.lower() in ['true', 'false']:
         value_type = 'boolean'
     elif value.isdigit():
@@ -2360,57 +2066,14 @@ async def set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         value_type = 'string'
     
     if db.update_setting(key, value, update.effective_user.id, value_type):
-        await update.message.reply_text(
-            f"✅ Setting `{key}` diubah menjadi `{value}`",
-            parse_mode=ParseMode.MARKDOWN
-        )
+        await update.message.reply_text(f"✅ Setting `{key}` diubah menjadi `{value}`", parse_mode=ParseMode.MARKDOWN)
         logger.info(f"⚙️ Setting {key} changed to {value} by {update.effective_user.id}")
     else:
         await update.message.reply_text(f"❌ Gagal mengubah setting `{key}`", parse_mode=ParseMode.MARKDOWN)
 
-@role_required(UserRole.SUPER_ADMIN)
-async def block_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /block command"""
-    if not context.args:
-        await update.message.reply_text("❌ Gunakan: /block [user_id]")
-        return
-    
-    try:
-        target_id = int(context.args[0])
-        
-        if target_id in SUPER_ADMINS:
-            await update.message.reply_text("❌ Tidak bisa memblokir super admin!")
-            return
-        
-        if db.block_user(target_id, "Blocked by admin"):
-            await update.message.reply_text(f"✅ User `{target_id}` telah diblokir.", parse_mode=ParseMode.MARKDOWN)
-            db.log_admin_action(update.effective_user.id, 'block_user', 'user', str(target_id), "Blocked user")
-        else:
-            await update.message.reply_text(f"❌ User `{target_id}` tidak ditemukan.", parse_mode=ParseMode.MARKDOWN)
-    except ValueError:
-        await update.message.reply_text("❌ ID user harus berupa angka!")
-
-@role_required(UserRole.SUPER_ADMIN)
-async def unblock_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /unblock command"""
-    if not context.args:
-        await update.message.reply_text("❌ Gunakan: /unblock [user_id]")
-        return
-    
-    try:
-        target_id = int(context.args[0])
-        
-        if db.unblock_user(target_id):
-            await update.message.reply_text(f"✅ User `{target_id}` telah dibuka blokirnya.", parse_mode=ParseMode.MARKDOWN)
-            db.log_admin_action(update.effective_user.id, 'unblock_user', 'user', str(target_id), "Unblocked user")
-        else:
-            await update.message.reply_text(f"❌ User `{target_id}` tidak ditemukan.", parse_mode=ParseMode.MARKDOWN)
-    except ValueError:
-        await update.message.reply_text("❌ ID user harus berupa angka!")
-
-@role_required(UserRole.SUPER_ADMIN)
+@super_admin_required
 async def backup_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /backup command"""
+    """Handle /backup command - Backup database"""
     user = update.effective_user
     
     msg = await update.message.reply_text("💾 Membuat backup database...")
@@ -2429,6 +2092,7 @@ async def backup_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode=ParseMode.MARKDOWN
         )
         
+        # Send file
         await context.bot.send_document(
             chat_id=user.id,
             document=open(backup_file, 'rb'),
@@ -2440,154 +2104,26 @@ async def backup_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     db.log_interaction(user.id, '/backup')
 
-# ==================== BROADCAST COMMANDS (dari script kedua) ====================
-
-@role_required(UserRole.ADMIN)
-async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /broadcast command"""
+@super_admin_required
+async def logs_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /logs command - Lihat log aktivitas"""
     user = update.effective_user
-    perms = db.get_admin_permissions(user.id) if db.get_user_role(user.id) == UserRole.ADMIN else {'can_broadcast': True}
+    db.log_interaction(user.id, '/logs')
     
-    if not perms.get('can_broadcast') and db.get_user_role(user.id) != UserRole.SUPER_ADMIN:
-        await update.message.reply_text("❌ Anda tidak memiliki izin untuk broadcast.")
-        return
+    logs = db.get_admin_logs(20)
     
-    text = (
-        "📢 *SISTEM BROADCAST*\n\n"
-        "Pilih jenis broadcast:\n\n"
-        "1️⃣ *Broadcast Teks* - Kirim pesan teks ke semua user\n"
-        "2️⃣ *Broadcast dengan Gambar* - Kirim pesan + gambar\n"
-        "3️⃣ *Lihat Riwayat* - Lihat broadcast sebelumnya\n\n"
-        "Klik tombol di bawah untuk memulai:"
-    )
+    text = "📋 *LOG AKTIVITAS ADMIN (20 Terakhir)*\n\n"
     
-    keyboard = [
-        [InlineKeyboardButton("📝 BROADCAST TEKS", callback_data='broadcast_text')],
-        [InlineKeyboardButton("🖼️ BROADCAST + GAMBAR", callback_data='broadcast_image')],
-        [InlineKeyboardButton("📋 LIHAT RIWAYAT", callback_data='broadcast_history')],
-        [InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')]
-    ]
-    
-    await update.message.reply_text(
-        text=text,
-        parse_mode=ParseMode.MARKDOWN,
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
-    
-    db.log_interaction(user.id, '/broadcast')
-
-# ==================== AUTO POST COMMANDS (dari script kedua) ====================
-
-@role_required(UserRole.ADMIN)
-async def posts_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /posts command - untuk SQLite"""
-    user = update.effective_user
-    perms = db.get_admin_permissions(user.id) if db.get_user_role(user.id) == UserRole.ADMIN else {'can_manage_posts': True}
-    
-    if not perms.get('can_manage_posts') and db.get_user_role(user.id) != UserRole.SUPER_ADMIN:
-        await update.message.reply_text("❌ Anda tidak memiliki izin untuk mengelola auto post.")
-        return
-    
-    posts = db.get_all_posts(include_inactive=True)
-    
-    text = "📅 *MANAJEMEN AUTO POST (SQLite)*\n\n"
-    
-    if posts:
-        for post in posts:
-            status = "✅ AKTIF" if post['is_active'] else "❌ NONAKTIF"
-            text += f"🆔 *{post['post_id']}* | {post['time']} | {status}\n"
-            preview = post['text'][:50] + ('...' if len(post['text']) > 50 else '')
-            text += f"   `{preview}`\n"
-            if post.get('image_url'):
-                text += f"   📷 Ada Gambar\n"
-            if post.get('category'):
-                text += f"   📂 Kategori: {post['category']}\n"
+    if logs:
+        for log in logs:
+            admin = log.get('username') or log.get('first_name') or f"User {log['admin_id']}"
+            text += f"🕐 {log['timestamp'][:16]} - {admin}\n"
+            text += f"   ⚡ {log['action']} - {log.get('target_type', 'system')}\n"
+            if log.get('details'):
+                text += f"   📝 {log['details'][:50]}\n"
             text += "\n"
     else:
-        text += "Belum ada jadwal tersedia.\n\n"
-    
-    text += "Pilih menu di bawah:"
-    
-    keyboard = [
-        [InlineKeyboardButton("➕ TAMBAH JADWAL", callback_data='posts_add')],
-        [InlineKeyboardButton("✏️ EDIT JADWAL", callback_data='posts_edit')],
-        [InlineKeyboardButton("❌ HAPUS JADWAL", callback_data='posts_delete')],
-        [InlineKeyboardButton("✅ AKTIFKAN/NONAKTIFKAN", callback_data='posts_toggle')],
-        [InlineKeyboardButton("📋 LIHAT SEMUA", callback_data='posts_list')],
-        [InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')]
-    ]
-    
-    await update.message.reply_text(
-        text=text,
-        parse_mode=ParseMode.MARKDOWN,
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
-    
-    db.log_interaction(user.id, '/posts')
-
-# ==================== STATISTICS COMMAND ====================
-
-@role_required(UserRole.ADMIN)
-async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /stats command"""
-    user = update.effective_user
-    perms = db.get_admin_permissions(user.id) if db.get_user_role(user.id) == UserRole.ADMIN else {'can_view_stats': True}
-    
-    if not perms.get('can_view_stats') and db.get_user_role(user.id) != UserRole.SUPER_ADMIN:
-        await update.message.reply_text("❌ Anda tidak memiliki izin untuk melihat statistik.")
-        return
-    
-    user_stats = db.get_user_stats()
-    broadcast_stats = db.get_broadcast_stats()
-    posts = db.get_all_posts()
-    
-    with db.get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute('SELECT COUNT(*) FROM user_interactions WHERE date(timestamp) = date("now")')
-        interactions_today = cursor.fetchone()[0]
-        
-        cursor.execute('SELECT COUNT(*) FROM user_interactions')
-        total_interactions = cursor.fetchone()[0]
-    
-    text = (
-        "📊 *STATISTIK BOT LENGKAP*\n\n"
-        "👥 *USER STATISTICS*\n"
-        f"• Total User: {user_stats['total']}\n"
-        f"• User Baru Hari Ini: {user_stats['today']}\n"
-        f"• User Baru Minggu Ini: {user_stats['week']}\n"
-        f"• User Baru Bulan Ini: {user_stats['month']}\n"
-        f"• User Aktif (24h): {user_stats['active_24h']}\n"
-        f"• User Aktif (7 hari): {user_stats['active_week']}\n"
-        f"• User Diblokir: {user_stats['blocked']}\n"
-        f"• User Dibanned: {user_stats['banned']}\n\n"
-    )
-    
-    if user_stats['languages']:
-        text += "🌍 *Top Languages*\n"
-        for lang in user_stats['languages']:
-            text += f"• {lang['language_code']}: {lang['count']} user\n"
-        text += "\n"
-    
-    text += (
-        "📅 *AUTO POST (SQLite)*\n"
-        f"• Total Jadwal: {len(posts)}\n"
-        f"• Jadwal Aktif: {sum(1 for p in posts if p['is_active'])}\n\n"
-        "📢 *BROADCAST*\n"
-        f"• Total Broadcast: {broadcast_stats['total']}\n"
-        f"• Broadcast Terkirim: {broadcast_stats['sent']}\n"
-        f"• Terjadwal: {broadcast_stats['scheduled']}\n"
-        f"• Total Pesan Terkirim: {broadcast_stats['total_success']}\n"
-        f"• Success Rate: {broadcast_stats['success_rate']:.1f}%\n\n"
-        "📋 *INTERAKSI*\n"
-        f"• Interaksi Hari Ini: {interactions_today}\n"
-        f"• Total Interaksi: {total_interactions}\n\n"
-        f"⚙️ *VERSI BOT*\n• Ultimate Pro v3.0"
-    )
-    
-    # Tambah info jadwal dari script pertama
-    text += f"\n\n📅 *AUTO POST (JSON)*\n"
-    text += f"• Total Jadwal: {len(post_manager.posts)}\n"
-    text += f"• Jadwal Aktif: {sum(1 for p in post_manager.posts.values() if p.get('active', True))}\n"
+        text += "Belum ada log.\n"
     
     keyboard = [[InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')]]
     
@@ -2596,10 +2132,55 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode=ParseMode.MARKDOWN,
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-    
-    db.log_interaction(user.id, '/stats')
 
-# ==================== BUTTON CALLBACK HANDLER (gabungan) ====================
+@super_admin_required
+async def templates_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /templates command - Kelola template"""
+    user = update.effective_user
+    db.log_interaction(user.id, '/templates')
+    
+    templates = db.get_templates()
+    
+    text = "📝 *TEMPLATE PESAN*\n\n"
+    
+    if templates:
+        for t in templates[:10]:
+            text += f"• *{t['name']}* ({t['type']})\n"
+            text += f"  📊 Used: {t['use_count']}x\n"
+            text += f"  🆔 ID: `{t['template_id']}`\n\n"
+        if len(templates) > 10:
+            text += f"\n...dan {len(templates)-10} lainnya\n"
+    else:
+        text += "Belum ada template.\n"
+    
+    text += "\nGunakan /add_template [nama] [type] [content] untuk menambah template"
+    
+    keyboard = [[InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')]]
+    
+    await update.message.reply_text(
+        text=text,
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+# ==================== TEST CHANNEL ====================
+
+async def test_channel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Test kirim ke channel"""
+    user = update.effective_user
+    db.add_or_update_user(user)
+    
+    try:
+        await context.bot.send_message(
+            chat_id=CHANNEL_ID,
+            text="🧪 *TEST BOT*\n\nBot aktif dan berjalan normal!",
+            parse_mode=ParseMode.MARKDOWN
+        )
+        await update.message.reply_text("✅ Pesan test terkirim ke channel!")
+    except Exception as e:
+        await update.message.reply_text(f"❌ Gagal: {e}")
+
+# ==================== BUTTON HANDLERS ====================
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle all button callbacks"""
@@ -2612,7 +2193,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"🔘 Button {data} diklik oleh {user.first_name} (ID: {user.id})")
     
     try:
-        # ========== USER BUTTONS dari script pertama ==========
+        # ========== USER BUTTONS ==========
         if data == "login":
             text = "🔐 *Link Login*\n\nKlik tombol di bawah untuk login:"
             keyboard = [[InlineKeyboardButton("🔐 LOGIN SEKARANG", url="https://bopel2.link/login")]]
@@ -2647,188 +2228,65 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await send_promo(query.message, context)
             await query.delete_message()
         
-        elif data == "menu_utama" or data == "back_to_menu":
+        elif data == "back_to_menu":
             await start_command(update, context)
         
-        # ========== ADMIN BUTTONS dari script pertama ==========
-        elif data.startswith('admin_'):
-            if user.id not in post_manager.authorized_users:
-                await query.message.reply_text("❌ Anda tidak diizinkan.")
-                return
-            
-            if data == 'admin_list':
-                if not post_manager.posts:
-                    text = "📋 Belum ada jadwal tersedia."
-                else:
-                    text = "📋 *DAFTAR JADWAL AUTO POST*\n\n"
-                    for post_id, post in post_manager.posts.items():
-                        status = "✅" if post.get('active', True) else "❌"
-                        has_image = "📷" if post.get('image_url') else "📝"
-                        text += f"{has_image} ID {post_id}: {post.get('time')} {status}\n"
-                
-                await query.message.edit_text(
-                    text=text,
-                    parse_mode=ParseMode.MARKDOWN,
-                    reply_markup=InlineKeyboardMarkup([[
-                        InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_back')
-                    ]])
-                )
-            
-            elif data == 'admin_add':
-                post_manager.pending_input[user.id] = {
-                    'action': 'add',
-                    'step': 'time'
-                }
-                await query.message.edit_text(
-                    "🕐 *TAMBAH JADWAL BARU - LANGKAH 1/4*\n\n"
-                    "Masukkan waktu pengiriman dalam format *HH:MM*\n"
-                    "Contoh: `14:30`\n\n"
-                    "Ketik *batal* untuk membatalkan.",
-                    parse_mode=ParseMode.MARKDOWN
-                )
-            
-            elif data == 'admin_next':
-                next_run = post_manager.get_next_run_time()
-                if next_run:
-                    text = f"⏰ *JADWAL BERIKUTNYA*\n\n{next_run.strftime('%d %B %Y, %H:%M:%S')}"
-                else:
-                    text = "⚠️ Tidak ada jadwal aktif"
-                
-                await query.message.edit_text(
-                    text=text,
-                    parse_mode=ParseMode.MARKDOWN,
-                    reply_markup=InlineKeyboardMarkup([[
-                        InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_back')
-                    ]])
-                )
-            
-            elif data == 'admin_back':
-                text = (
-                    "🔧 *PANEL ADMIN AUTO POST*\n\n"
-                    "Pilih menu:"
-                )
-                keyboard = [
-                    [InlineKeyboardButton("📋 LIST JADWAL", callback_data='admin_list')],
-                    [InlineKeyboardButton("➕ TAMBAH JADWAL", callback_data='admin_add')],
-                    [InlineKeyboardButton("🔄 CEK JADWAL BERIKUTNYA", callback_data='admin_next')],
-                    [InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data='menu_utama')]
-                ]
-                await query.message.edit_text(
-                    text=text,
-                    parse_mode=ParseMode.MARKDOWN,
-                    reply_markup=InlineKeyboardMarkup(keyboard)
-                )
-        
-        # ========== EDIT FIELD BUTTONS dari script pertama ==========
-        elif data.startswith('edit_field_'):
-            parts = data.split('_')
-            field = parts[2]
-            post_id = parts[3]
-            
-            if field == 'time':
-                post_manager.pending_input[user.id] = {
-                    'action': 'edit',
-                    'post_id': post_id,
-                    'step': 'time'
-                }
-                await query.message.edit_text(
-                    f"🕐 *EDIT WAKTU ID {post_id}*\n\n"
-                    "Masukkan waktu baru dalam format HH:MM\n"
-                    "Contoh: 14:30\n\n"
-                    "Ketik *batal* untuk membatalkan.",
-                    parse_mode=ParseMode.MARKDOWN
-                )
-            
-            elif field == 'text':
-                post_manager.pending_input[user.id] = {
-                    'action': 'edit',
-                    'post_id': post_id,
-                    'step': 'text'
-                }
-                await query.message.edit_text(
-                    f"📝 *EDIT TEKS ID {post_id}*\n\n"
-                    "Masukkan teks baru:\n\n"
-                    "Ketik *batal* untuk membatalkan.",
-                    parse_mode=ParseMode.MARKDOWN
-                )
-            
-            elif field == 'image':
-                post_manager.pending_input[user.id] = {
-                    'action': 'edit',
-                    'post_id': post_id,
-                    'step': 'image'
-                }
-                await query.message.edit_text(
-                    f"📷 *EDIT GAMBAR ID {post_id}*\n\n"
-                    "Masukkan URL gambar baru\n"
-                    "Ketik *-* untuk menghapus gambar\n\n"
-                    "Ketik *batal* untuk membatalkan.",
-                    parse_mode=ParseMode.MARKDOWN
-                )
-            
-            elif field == 'active':
-                post = post_manager.posts.get(post_id, {})
-                current = post.get('active', True)
-                new_status = not current
-                post_manager.update_post(post_id, active=new_status)
-                
-                status_text = "diaktifkan" if new_status else "dinonaktifkan"
-                await query.message.edit_text(
-                    f"✅ Jadwal ID {post_id} telah {status_text}.",
-                    reply_markup=InlineKeyboardMarkup([[
-                        InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_list')
-                    ]])
-                )
-                
-                await scheduler.schedule_next_run(context)
-        
-        # ========== ADMIN DASHBOARD dari script kedua ==========
+        # ========== ADMIN BUTTONS ==========
         elif data == "admin_dashboard":
             if not db.is_admin(user.id):
                 await query.message.reply_text("❌ Akses ditolak")
                 return
             
-            role = db.get_user_role(user.id)
-            user_stats = db.get_user_stats()
+            user_stats = db.get_user_count()
             posts = db.get_all_posts()
             active_posts = sum(1 for p in posts if p['is_active'])
+            broadcast_stats = db.get_broadcast_stats()
+            
+            with db.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT COUNT(*) FROM broadcast_messages WHERE status = "scheduled"')
+                scheduled_broadcasts = cursor.fetchone()[0]
+                
+                cursor.execute('SELECT COUNT(*) FROM admin_logs WHERE date(timestamp) = date("now")')
+                today_logs = cursor.fetchone()[0]
             
             text = (
                 "⚙️ *DASHBOARD ADMIN*\n\n"
                 f"👤 *Admin:* {user.first_name}\n"
                 f"🆔 *ID:* `{user.id}`\n"
-                f"👑 *Level:* {'⭐ SUPER ADMIN' if role == UserRole.SUPER_ADMIN else '👑 ADMIN'}\n\n"
+                f"👑 *Level:* {'⭐ SUPER ADMIN' if db.is_super_admin(user.id) else '👑 ADMIN'}\n\n"
                 f"📊 *STATISTIK*\n"
                 f"• Total User: {user_stats['total']}\n"
                 f"• User Baru Hari Ini: {user_stats['today']}\n"
                 f"• User Aktif 24h: {user_stats['active_24h']}\n"
-                f"• Total Jadwal SQLite: {len(posts)}\n"
-                f"• Jadwal Aktif SQLite: {active_posts}\n"
-                f"• Total Jadwal JSON: {len(post_manager.posts)}\n"
+                f"• User Diblokir: {user_stats['blocked']}\n"
+                f"• Total Jadwal: {len(posts)}\n"
+                f"• Jadwal Aktif: {active_posts}\n"
+                f"• Broadcast: {broadcast_stats['total']}\n"
+                f"• Log Hari Ini: {today_logs}\n\n"
+                f"📌 *Menu Admin:*"
             )
             
             keyboard = []
-            perms = db.get_admin_permissions(user.id) if role == UserRole.ADMIN else {}
+            perms = db.get_admin_permissions(user.id) if db.get_user_role(user.id) == UserRole.ADMIN else {}
             
-            if role == UserRole.SUPER_ADMIN or perms.get('can_manage_users', True):
+            if db.is_super_admin(user.id) or perms.get('can_manage_users', True):
                 keyboard.append([InlineKeyboardButton("👥 MANAJEMEN USER", callback_data='admin_users')])
-            if role == UserRole.SUPER_ADMIN or perms.get('can_broadcast', True):
+            if db.is_super_admin(user.id) or perms.get('can_broadcast', True):
                 keyboard.append([InlineKeyboardButton("📢 BROADCAST", callback_data='admin_broadcast')])
-            if role == UserRole.SUPER_ADMIN or perms.get('can_manage_posts', True):
-                keyboard.append([InlineKeyboardButton("📅 AUTO POST (SQLite)", callback_data='admin_posts')])
-            if role == UserRole.SUPER_ADMIN or perms.get('can_view_stats', True):
+            if db.is_super_admin(user.id) or perms.get('can_manage_posts', True):
+                keyboard.append([InlineKeyboardButton("📅 AUTO POST", callback_data='admin_posts')])
+            if db.is_super_admin(user.id) or perms.get('can_view_stats', True):
                 keyboard.append([InlineKeyboardButton("📊 STATISTIK", callback_data='admin_stats')])
                 keyboard.append([InlineKeyboardButton("📋 LOG AKTIVITAS", callback_data='admin_logs')])
             
-            if role == UserRole.SUPER_ADMIN:
+            if db.is_super_admin(user.id):
                 keyboard.extend([
                     [InlineKeyboardButton("👑 KELOLA ADMIN", callback_data='admin_manage_admins')],
                     [InlineKeyboardButton("⚙️ PENGATURAN", callback_data='admin_settings')],
                     [InlineKeyboardButton("💾 BACKUP", callback_data='admin_backup')],
+                    [InlineKeyboardButton("📝 TEMPLATE", callback_data='admin_templates')],
                 ])
-            
-            if user.id in post_manager.authorized_users:
-                keyboard.append([InlineKeyboardButton("📅 AUTO POST (JSON)", callback_data='admin_back')])
             
             keyboard.append([InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data='back_to_menu')])
             
@@ -2841,6 +2299,12 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif data == "admin_users":
             if not db.is_admin(user.id):
                 return
+            
+            if db.get_user_role(user.id) == UserRole.ADMIN:
+                perms = db.get_admin_permissions(user.id)
+                if not perms.get('can_manage_users', True):
+                    await query.message.reply_text("❌ Anda tidak memiliki izin untuk mengelola user.")
+                    return
             
             users = db.get_all_users(limit=10)
             total = db.get_user_count()['total']
@@ -2862,7 +2326,9 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]
             
             if db.is_super_admin(user.id):
-                keyboard.append([InlineKeyboardButton("⛔ BLOKIR USER", callback_data='user_block')])
+                keyboard.append([InlineKeyboardButton("🔍 SEARCH", callback_data='user_search')])
+                keyboard.append([InlineKeyboardButton("⛔ BLOKIR", callback_data='user_block')])
+                keyboard.append([InlineKeyboardButton("🚫 BAN", callback_data='user_ban')])
             
             keyboard.append([InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')])
             
@@ -2919,7 +2385,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
             posts = db.get_all_posts(include_inactive=True)
             
-            text = "📅 *MANAJEMEN AUTO POST (SQLite)*\n\n"
+            text = "📅 *MANAJEMEN AUTO POST*\n\n"
             
             if posts:
                 for post in posts[:5]:
@@ -2930,7 +2396,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if len(posts) > 5:
                     text += f"\n...dan {len(posts)-5} jadwal lainnya\n"
             else:
-                text += "Belum ada jadwal.\n\n"
+                text += "Belum ada jadwal.\n"
             
             text += "\nPilih menu:"
             
@@ -2959,7 +2425,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await query.message.reply_text("❌ Anda tidak memiliki izin untuk melihat statistik.")
                     return
             
-            user_stats = db.get_user_stats()
+            user_stats = db.get_user_count()
             posts = db.get_all_posts()
             broadcast_stats = db.get_broadcast_stats()
             
@@ -2979,7 +2445,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"• Aktif 24h: {user_stats['active_24h']}\n"
                 f"• Diblokir: {user_stats['blocked']}\n"
                 f"• Dibanned: {user_stats['banned']}\n\n"
-                "📅 *AUTO POST (SQLite)*\n"
+                "📅 *AUTO POST*\n"
                 f"• Total Jadwal: {len(posts)}\n"
                 f"• Aktif: {sum(1 for p in posts if p['is_active'])}\n\n"
                 "📢 *BROADCAST*\n"
@@ -2989,7 +2455,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "📋 *AKTIVITAS*\n"
                 f"• Interaksi Hari Ini: {interactions_today}\n"
                 f"• Log Admin Hari Ini: {logs_today}\n"
-                f"• Jadwal JSON: {len(post_manager.posts)}\n"
             )
             
             keyboard = [[InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')]]
@@ -3048,6 +2513,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             keyboard = [
                 [InlineKeyboardButton("📋 LIHAT SEMUA", callback_data='admins_list')],
                 [InlineKeyboardButton("➕ TAMBAH ADMIN", callback_data='admins_add')],
+                [InlineKeyboardButton("✏️ EDIT PERMISSIONS", callback_data='admins_edit')],
                 [InlineKeyboardButton("➖ HAPUS ADMIN", callback_data='admins_remove')],
                 [InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')]
             ]
@@ -3087,12 +2553,41 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return
             
             text = (
-                "💾 *BACKUP DATABASE*\n\n"
+                "💾 *BACKUP & RESTORE*\n\n"
                 "Pilih opsi:"
             )
             
             keyboard = [
                 [InlineKeyboardButton("📤 BUAT BACKUP", callback_data='backup_create')],
+                [InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')]
+            ]
+            
+            await query.message.edit_text(
+                text=text,
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+        
+        elif data == "admin_templates":
+            if not db.is_super_admin(user.id):
+                return
+            
+            templates = db.get_templates()
+            
+            text = "📝 *TEMPLATE PESAN*\n\n"
+            
+            if templates:
+                for t in templates[:5]:
+                    text += f"• *{t['name']}* ({t['type']})\n"
+                    text += f"  📊 Used: {t['use_count']}x\n"
+                if len(templates) > 5:
+                    text += f"\n...dan {len(templates)-5} lainnya\n"
+            else:
+                text += "Belum ada template.\n"
+            
+            keyboard = [
+                [InlineKeyboardButton("➕ BUAT TEMPLATE", callback_data='template_add')],
+                [InlineKeyboardButton("📋 LIHAT SEMUA", callback_data='template_list')],
                 [InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')]
             ]
             
@@ -3144,7 +2639,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
         
-        # ========== BROADCAST FLOW ==========
+        # ========== BROADCAST BUTTONS ==========
         elif data == "broadcast_text":
             if not db.is_admin(user.id):
                 return
@@ -3194,6 +2689,9 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     text += f"{status_emoji} {date} - {creator}\n"
                     text += f"   📊 {b['success_count']}/{b['total_recipients'] or 0} sukses\n"
                     
+                    if b.get('scheduled_time'):
+                        text += f"   ⏰ Jadwal: {b['scheduled_time'][:16]}\n"
+                    
                     if b['message_text']:
                         preview = b['message_text'][:50].replace('\n', ' ')
                         text += f"   `{preview}...`\n"
@@ -3212,10 +2710,9 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if not db.is_admin(user.id):
                 return
             
-            # Ini untuk SQLite
-            context.user_data['post_step_sql'] = 'time'
+            context.user_data['post_step'] = 'time'
             await query.message.edit_text(
-                "➕ *TAMBAH JADWAL (SQLite)*\n\n"
+                "➕ *TAMBAH JADWAL AUTO POST*\n\n"
                 "Langkah 1/4: Masukkan waktu (HH:MM)\n"
                 "Contoh: `14:30`\n\n"
                 "Ketik *batal* untuk membatalkan.",
@@ -3229,15 +2726,17 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             posts = db.get_all_posts(include_inactive=True)
             
             if not posts:
-                text = "📋 *SEMUA JADWAL (SQLite)*\n\nBelum ada jadwal."
+                text = "📋 *SEMUA JADWAL*\n\nBelum ada jadwal."
             else:
-                text = "📋 *SEMUA JADWAL AUTO POST (SQLite)*\n\n"
+                text = "📋 *SEMUA JADWAL AUTO POST*\n\n"
                 for post in posts:
                     status = "✅" if post['is_active'] else "❌"
                     text += f"{status} *ID {post['post_id']}* | {post['time']}\n"
                     text += f"   `{post['text'][:100]}`\n"
                     if post.get('image_url'):
                         text += f"   📷 Gambar: {post['image_url'][:50]}...\n"
+                    if post.get('category'):
+                        text += f"   📂 Kategori: {post['category']}\n"
                     text += "\n"
             
             keyboard = [[InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_posts')]]
@@ -3248,30 +2747,61 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
         
-        # ========== USER STATS ==========
-        elif data == "user_stats":
+        elif data == "posts_edit":
             if not db.is_admin(user.id):
                 return
             
-            stats = db.get_user_stats()
-            
-            text = (
-                "📊 *STATISTIK USER*\n\n"
-                f"• Total User: {stats['total']}\n"
-                f"• Hari Ini: {stats['today']}\n"
-                f"• Minggu Ini: {stats['week']}\n"
-                f"• Bulan Ini: {stats['month']}\n"
-                f"• Aktif 24 Jam: {stats['active_24h']}\n"
-                f"• Aktif 7 Hari: {stats['active_week']}\n"
-                f"• Diblokir: {stats['blocked']}\n"
-                f"• Dibanned: {stats['banned']}\n\n"
-                "🌍 *Top Languages*\n"
+            context.user_data['post_action'] = 'edit'
+            await query.message.edit_text(
+                "✏️ *EDIT JADWAL*\n\n"
+                "Masukkan ID jadwal yang ingin diedit:\n\n"
+                "Ketik *batal* untuk membatalkan.",
+                parse_mode=ParseMode.MARKDOWN
             )
+        
+        elif data == "posts_delete":
+            if not db.is_admin(user.id):
+                return
             
-            for lang in stats['languages']:
-                text += f"• {lang['language_code']}: {lang['count']} user\n"
+            context.user_data['post_action'] = 'delete'
+            await query.message.edit_text(
+                "❌ *HAPUS JADWAL*\n\n"
+                "Masukkan ID jadwal yang ingin dihapus:\n\n"
+                "Ketik *batal* untuk membatalkan.",
+                parse_mode=ParseMode.MARKDOWN
+            )
+        
+        elif data == "posts_toggle":
+            if not db.is_admin(user.id):
+                return
             
-            keyboard = [[InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_users')]]
+            context.user_data['post_action'] = 'toggle'
+            await query.message.edit_text(
+                "🔄 *AKTIFKAN/NONAKTIFKAN JADWAL*\n\n"
+                "Masukkan ID jadwal:\n\n"
+                "Ketik *batal* untuk membatalkan.",
+                parse_mode=ParseMode.MARKDOWN
+            )
+        
+        elif data == "posts_categories":
+            if not db.is_admin(user.id):
+                return
+            
+            posts = db.get_all_posts(include_inactive=True)
+            categories = {}
+            
+            for post in posts:
+                cat = post.get('category', 'general')
+                if cat not in categories:
+                    categories[cat] = 0
+                categories[cat] += 1
+            
+            text = "📂 *KATEGORI AUTO POST*\n\n"
+            
+            for cat, count in categories.items():
+                text += f"• {cat}: {count} jadwal\n"
+            
+            keyboard = [[InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_posts')]]
             
             await query.message.edit_text(
                 text=text,
@@ -3279,14 +2809,75 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
         
-        elif data == "user_block":
+        # ========== ADMINS BUTTONS ==========
+        elif data == "admins_list":
             if not db.is_super_admin(user.id):
                 return
             
-            context.user_data['admin_action'] = 'block'
+            admins = db.get_all_admins()
+            
+            text = "👑 *DAFTAR ADMIN*\n\n"
+            
+            if not admins:
+                text += "Belum ada admin selain super admin."
+            else:
+                for admin in admins:
+                    role_emoji = "⭐" if admin.get('role') == 'super_admin' else "👑"
+                    name = admin.get('first_name') or f"User {admin['user_id']}"
+                    username = f"@{admin['username']}" if admin.get('username') else ""
+                    
+                    text += f"{role_emoji} `{admin['user_id']}` - {name} {username}\n"
+                    text += f"   📅 Added: {admin['added_date'][:10]}\n"
+                    
+                    if admin.get('role') != 'super_admin':
+                        perms = []
+                        if admin.get('can_manage_users'): perms.append("👥")
+                        if admin.get('can_manage_posts'): perms.append("📅")
+                        if admin.get('can_broadcast'): perms.append("📢")
+                        if admin.get('can_view_stats'): perms.append("📊")
+                        text += f"   🔑 {', '.join(perms)}\n"
+                    text += "\n"
+            
+            keyboard = [[InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_manage_admins')]]
+            
             await query.message.edit_text(
-                "⛔ *BLOKIR USER*\n\n"
-                "Masukkan User ID yang ingin diblokir:\n\n"
+                text=text,
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+        
+        elif data == "admins_add":
+            if not db.is_super_admin(user.id):
+                return
+            
+            context.user_data['admin_step'] = 'waiting_id'
+            await query.message.edit_text(
+                "➕ *TAMBAH ADMIN*\n\n"
+                "Masukkan User ID yang ingin dijadikan admin:\n\n"
+                "Ketik *batal* untuk membatalkan.",
+                parse_mode=ParseMode.MARKDOWN
+            )
+        
+        elif data == "admins_edit":
+            if not db.is_super_admin(user.id):
+                return
+            
+            context.user_data['admin_step'] = 'edit_id'
+            await query.message.edit_text(
+                "✏️ *EDIT PERMISSIONS ADMIN*\n\n"
+                "Masukkan User ID admin yang ingin diedit:\n\n"
+                "Ketik *batal* untuk membatalkan.",
+                parse_mode=ParseMode.MARKDOWN
+            )
+        
+        elif data == "admins_remove":
+            if not db.is_super_admin(user.id):
+                return
+            
+            context.user_data['admin_step'] = 'remove_id'
+            await query.message.edit_text(
+                "➖ *HAPUS ADMIN*\n\n"
+                "Masukkan User ID admin yang ingin dihapus:\n\n"
                 "Ketik *batal* untuk membatalkan.",
                 parse_mode=ParseMode.MARKDOWN
             )
@@ -3320,6 +2911,73 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await query.message.edit_text("❌ Gagal membuat backup.")
         
+        # ========== USER ACTIONS ==========
+        elif data == "user_stats":
+            if not db.is_admin(user.id):
+                return
+            
+            stats = db.get_user_count()
+            
+            text = (
+                "📊 *STATISTIK USER*\n\n"
+                f"• Total User: {stats['total']}\n"
+                f"• Hari Ini: {stats['today']}\n"
+                f"• Minggu Ini: {stats['week']}\n"
+                f"• Bulan Ini: {stats['month']}\n"
+                f"• Aktif 24 Jam: {stats['active_24h']}\n"
+                f"• Aktif 7 Hari: {stats['active_week']}\n"
+                f"• Diblokir: {stats['blocked']}\n"
+                f"• Dibanned: {stats['banned']}\n\n"
+                "🌍 *Top Languages*\n"
+            )
+            
+            for lang in stats['languages']:
+                text += f"• {lang['language_code']}: {lang['count']} user\n"
+            
+            keyboard = [[InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_users')]]
+            
+            await query.message.edit_text(
+                text=text,
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+        
+        elif data == "user_search":
+            if not db.is_super_admin(user.id):
+                return
+            
+            context.user_data['admin_action'] = 'search'
+            await query.message.edit_text(
+                "🔍 *SEARCH USER*\n\n"
+                "Masukkan username atau nama yang ingin dicari:\n\n"
+                "Ketik *batal* untuk membatalkan.",
+                parse_mode=ParseMode.MARKDOWN
+            )
+        
+        elif data == "user_block":
+            if not db.is_super_admin(user.id):
+                return
+            
+            context.user_data['admin_action'] = 'block'
+            await query.message.edit_text(
+                "⛔ *BLOKIR USER*\n\n"
+                "Masukkan User ID yang ingin diblokir:\n\n"
+                "Ketik *batal* untuk membatalkan.",
+                parse_mode=ParseMode.MARKDOWN
+            )
+        
+        elif data == "user_ban":
+            if not db.is_super_admin(user.id):
+                return
+            
+            context.user_data['admin_action'] = 'ban'
+            await query.message.edit_text(
+                "🚫 *BAN USER*\n\n"
+                "Masukkan User ID yang ingin di-ban:\n\n"
+                "Ketik *batal* untuk membatalkan.",
+                parse_mode=ParseMode.MARKDOWN
+            )
+        
         # ========== CONFIRM BROADCAST ==========
         elif data.startswith('confirm_broadcast_'):
             if not db.is_admin(user.id):
@@ -3351,11 +3009,12 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             )
         
+        # No operation button
         elif data == "noop":
             pass
         
     except Exception as e:
-        logger.error(f"❌ Error in button_callback: {e}")
+        logger.error(f"❌ Error di button_callback: {e}")
         await query.message.reply_text(
             "❌ Terjadi kesalahan. Silakan coba lagi nanti."
         )
@@ -3363,26 +3022,21 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ==================== FUNGSI KIRIM PROMO ====================
 
 async def send_promo(message, context):
-    """Kirim promo dengan gambar (dari script pertama)"""
+    """Kirim promo dengan gambar"""
     try:
+        # Buat button untuk link
         keyboard = [
             [InlineKeyboardButton("🤖 BOT OFFICIAL", url="https://t.me/bolapelangi2_bot")],
             [InlineKeyboardButton("📈 PREDIKSI JITU", url="https://bopel2.vip/ChannelWA-Jadwal-Prediksi")],
             [InlineKeyboardButton("📢 CHANNEL WA", url="https://bopel2.vip/Channel-Whatsapp")],
             [InlineKeyboardButton("📢 CHANNEL TG", url="https://bopel2.vip/Channel-Telegram")],
             [InlineKeyboardButton("🟢 KLAIM BONUS", url="https://bopel2.link/wa")],
-            [InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data="menu_utama")]
+            [InlineKeyboardButton("🔙 KEMBALI KE MENU", callback_data="back_to_menu")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        image_url = None
-        for post in post_manager.posts.values():
-            if post.get('image_url'):
-                image_url = post['image_url']
-                break
-        
-        if not image_url:
-            image_url = config.get('images.default_promo', "https://i.ibb.co/your-image/promo-banner.jpg")
+        # Coba ambil gambar dari database
+        image_url = "https://i.ibb.co/your-image/promo-banner.jpg"  # Default
         
         try:
             await message.reply_photo(
@@ -3391,7 +3045,9 @@ async def send_promo(message, context):
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=reply_markup
             )
-        except:
+            logger.info("✅ Promo dengan gambar terkirim")
+        except Exception as e:
+            logger.warning(f"⚠️ Gagal kirim gambar: {e}, kirim teks saja")
             await message.reply_text(
                 text=PROMO_TEXT,
                 parse_mode=ParseMode.MARKDOWN,
@@ -3401,10 +3057,433 @@ async def send_promo(message, context):
     except Exception as e:
         logger.error(f"❌ Gagal kirim promo: {e}")
 
+# ==================== MESSAGE HANDLER ====================
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle all text messages"""
+    user = update.effective_user
+    text = update.message.text
+    
+    # Simpan user
+    db.add_or_update_user(user)
+    
+    # Cek apakah user di-block
+    user_data = db.get_user(user.id)
+    if user_data and user_data.get('is_blocked'):
+        return
+    
+    # ===== BAN REASON FLOW =====
+    if 'ban_step' in context.user_data and context.user_data['ban_step'] == 'reason':
+        if text.lower() == 'batal':
+            del context.user_data['ban_step']
+            del context.user_data['ban_target']
+            await update.message.reply_text("✅ Ban dibatalkan.")
+            return
+        
+        target_id = context.user_data['ban_target']
+        reason = text
+        
+        if db.ban_user(target_id, reason):
+            await update.message.reply_text(f"✅ User `{target_id}` telah di-ban dengan alasan: {reason}", parse_mode=ParseMode.MARKDOWN)
+            db.log_admin_action(user.id, 'ban_user', 'user', str(target_id), f"Banned: {reason}")
+        else:
+            await update.message.reply_text(f"❌ Gagal mem-ban user `{target_id}`", parse_mode=ParseMode.MARKDOWN)
+        
+        del context.user_data['ban_step']
+        del context.user_data['ban_target']
+        return
+    
+    # ===== BROADCAST FLOW =====
+    if 'broadcast_step' in context.user_data:
+        step = context.user_data['broadcast_step']
+        
+        if text.lower() == 'batal':
+            del context.user_data['broadcast_step']
+            await update.message.reply_text("✅ Broadcast dibatalkan.")
+            return
+        
+        if step == 'text':
+            # Validate length
+            max_length = db.get_setting_with_type('max_broadcast_length', 4096)
+            if len(text) > max_length:
+                await update.message.reply_text(
+                    f"❌ Pesan terlalu panjang! Maksimal {max_length} karakter.\n"
+                    f"Pesan Anda: {len(text)} karakter."
+                )
+                return
+            
+            broadcast_id = db.create_broadcast(
+                created_by=user.id,
+                message_text=text,
+                message_type='text'
+            )
+            
+            keyboard = [
+                [
+                    InlineKeyboardButton("✅ KIRIM SEKARANG", callback_data=f'confirm_broadcast_{broadcast_id}'),
+                    InlineKeyboardButton("❌ BATAL", callback_data='admin_broadcast')
+                ]
+            ]
+            
+            await update.message.reply_text(
+                "📢 *KONFIRMASI BROADCAST*\n\n"
+                f"Teks:\n{text}\n\n"
+                "Kirim sekarang?",
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+            
+            del context.user_data['broadcast_step']
+        
+        elif step == 'waiting_image':
+            context.user_data['broadcast_step'] = 'waiting_caption'
+            context.user_data['broadcast_image'] = text
+            await update.message.reply_text(
+                "📝 Kirim caption untuk gambar (atau ketik - untuk tanpa caption):"
+            )
+        
+        elif step == 'waiting_caption':
+            caption = text if text != '-' else None
+            broadcast_id = db.create_broadcast(
+                created_by=user.id,
+                message_text=caption or "Promo Terbaru",
+                message_type='photo',
+                file_id=context.user_data.get('broadcast_image'),
+                caption=caption
+            )
+            
+            keyboard = [
+                [
+                    InlineKeyboardButton("✅ KIRIM SEKARANG", callback_data=f'confirm_broadcast_{broadcast_id}'),
+                    InlineKeyboardButton("❌ BATAL", callback_data='admin_broadcast')
+                ]
+            ]
+            
+            await update.message.reply_text(
+                "📢 *KONFIRMASI BROADCAST*\n\n"
+                "Broadcast dengan gambar siap dikirim.",
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+            
+            del context.user_data['broadcast_step']
+        
+        return
+    
+    # ===== POST ADD FLOW =====
+    if 'post_step' in context.user_data:
+        step = context.user_data['post_step']
+        
+        if text.lower() == 'batal':
+            del context.user_data['post_step']
+            await update.message.reply_text("✅ Penambahan jadwal dibatalkan.")
+            return
+        
+        if step == 'time':
+            try:
+                hour, minute = map(int, text.split(':'))
+                if 0 <= hour <= 23 and 0 <= minute <= 59:
+                    context.user_data['post_time'] = text
+                    context.user_data['post_step'] = 'text'
+                    await update.message.reply_text(
+                        "Langkah 2/4: Masukkan teks yang ingin dikirim:"
+                    )
+                else:
+                    await update.message.reply_text("❌ Format waktu salah! Gunakan HH:MM (00-23:00-59)")
+            except:
+                await update.message.reply_text("❌ Format waktu salah! Gunakan HH:MM")
+        
+        elif step == 'text':
+            context.user_data['post_text'] = text
+            context.user_data['post_step'] = 'image'
+            await update.message.reply_text(
+                "Langkah 3/4: Masukkan URL gambar (atau ketik - untuk tanpa gambar):"
+            )
+        
+        elif step == 'image':
+            image_url = None if text == '-' else text
+            context.user_data['post_image'] = image_url
+            context.user_data['post_step'] = 'button'
+            await update.message.reply_text(
+                "Langkah 4/4: Masukkan teks tombol (atau ketik - untuk tanpa tombol):"
+            )
+        
+        elif step == 'button':
+            if text != '-':
+                context.user_data['post_button_text'] = text
+                context.user_data['post_step'] = 'button_url'
+                await update.message.reply_text(
+                    "Masukkan URL untuk tombol tersebut:"
+                )
+            else:
+                # Simpan tanpa tombol
+                post_id = db.add_post(
+                    time_str=context.user_data['post_time'],
+                    text=context.user_data['post_text'],
+                    image_url=context.user_data.get('post_image'),
+                    created_by=user.id
+                )
+                
+                await update.message.reply_text(f"✅ Jadwal ID {post_id} berhasil ditambahkan!")
+                del context.user_data['post_step']
+        
+        elif step == 'button_url':
+            # Simpan dengan tombol
+            post_id = db.add_post(
+                time_str=context.user_data['post_time'],
+                text=context.user_data['post_text'],
+                image_url=context.user_data.get('post_image'),
+                button_text=context.user_data.get('post_button_text'),
+                button_url=text,
+                created_by=user.id
+            )
+            
+            await update.message.reply_text(f"✅ Jadwal ID {post_id} berhasil ditambahkan!")
+            del context.user_data['post_step']
+        
+        return
+    
+    # ===== POST ACTION FLOW (edit/delete/toggle) =====
+    if 'post_action' in context.user_data:
+        action = context.user_data['post_action']
+        
+        if text.lower() == 'batal':
+            del context.user_data['post_action']
+            await update.message.reply_text("✅ Operasi dibatalkan.")
+            return
+        
+        try:
+            post_id = int(text)
+            
+            if action == 'edit':
+                post = db.get_post(post_id)
+                if not post:
+                    await update.message.reply_text(f"❌ Jadwal ID {post_id} tidak ditemukan.")
+                    del context.user_data['post_action']
+                    return
+                
+                context.user_data['edit_post_id'] = post_id
+                context.user_data['post_step'] = 'time'
+                await update.message.reply_text(
+                    f"✏️ *EDIT JADWAL ID {post_id}*\n\n"
+                    f"Data saat ini:\n"
+                    f"Waktu: {post['time']}\n"
+                    f"Teks: {post['text'][:50]}...\n\n"
+                    f"Masukkan waktu baru (HH:MM):",
+                    parse_mode=ParseMode.MARKDOWN
+                )
+                del context.user_data['post_action']
+            
+            elif action == 'delete':
+                if db.delete_post(post_id):
+                    await update.message.reply_text(f"✅ Jadwal ID {post_id} telah dihapus.")
+                    db.log_admin_action(user.id, 'delete_post', 'auto_post', str(post_id), "Deleted post")
+                else:
+                    await update.message.reply_text(f"❌ Gagal menghapus jadwal ID {post_id}.")
+                del context.user_data['post_action']
+            
+            elif action == 'toggle':
+                if db.toggle_post(post_id):
+                    post = db.get_post(post_id)
+                    status = "diaktifkan" if post['is_active'] else "dinonaktifkan"
+                    await update.message.reply_text(f"✅ Jadwal ID {post_id} telah {status}.")
+                    db.log_admin_action(user.id, 'toggle_post', 'auto_post', str(post_id), f"Post {status}")
+                else:
+                    await update.message.reply_text(f"❌ Gagal mengubah status jadwal ID {post_id}.")
+                del context.user_data['post_action']
+        
+        except ValueError:
+            await update.message.reply_text("❌ ID harus berupa angka!")
+        
+        return
+    
+    # ===== ADMIN ACTION FLOW (search) =====
+    if 'admin_action' in context.user_data:
+        action = context.user_data['admin_action']
+        
+        if text.lower() == 'batal':
+            del context.user_data['admin_action']
+            await update.message.reply_text("✅ Operasi dibatalkan.")
+            return
+        
+        if action == 'search':
+            users = db.search_users(text)
+            
+            if not users:
+                await update.message.reply_text(f"❌ Tidak ada user ditemukan untuk '{text}'.")
+            else:
+                result = f"🔍 *Hasil Pencarian: '{text}'*\n\n"
+                for u in users[:10]:
+                    status = "⛔" if u.get('is_blocked') else "✅"
+                    banned = "🚫" if u.get('is_banned') else ""
+                    result += f"{status}{banned} `{u['user_id']}` - {u['first_name']}"
+                    if u.get('username'):
+                        result += f" @{u['username']}"
+                    result += f"\n"
+                
+                if len(users) > 10:
+                    result += f"\n...dan {len(users)-10} lainnya"
+                
+                await update.message.reply_text(result, parse_mode=ParseMode.MARKDOWN)
+            
+            del context.user_data['admin_action']
+            return
+        
+        try:
+            target_id = int(text)
+            
+            if action == 'block':
+                if target_id in SUPER_ADMINS:
+                    await update.message.reply_text("❌ Tidak bisa memblokir super admin!")
+                else:
+                    if db.block_user(target_id, "Blocked by admin"):
+                        await update.message.reply_text(f"✅ User `{target_id}` telah diblokir.", parse_mode=ParseMode.MARKDOWN)
+                        db.log_admin_action(user.id, 'block_user', 'user', str(target_id), "Blocked user")
+                    else:
+                        await update.message.reply_text(f"❌ User `{target_id}` tidak ditemukan.", parse_mode=ParseMode.MARKDOWN)
+            
+            elif action == 'unblock':
+                if db.unblock_user(target_id):
+                    await update.message.reply_text(f"✅ User `{target_id}` telah dibuka blokirnya.", parse_mode=ParseMode.MARKDOWN)
+                    db.log_admin_action(user.id, 'unblock_user', 'user', str(target_id), "Unblocked user")
+                else:
+                    await update.message.reply_text(f"❌ User `{target_id}` tidak ditemukan.", parse_mode=ParseMode.MARKDOWN)
+            
+            del context.user_data['admin_action']
+        
+        except ValueError:
+            await update.message.reply_text("❌ ID user harus berupa angka!")
+        
+        return
+    
+    # ===== ADMIN ADD FLOW =====
+    if 'admin_step' in context.user_data:
+        step = context.user_data['admin_step']
+        
+        if text.lower() == 'batal':
+            del context.user_data['admin_step']
+            await update.message.reply_text("✅ Operasi dibatalkan.")
+            return
+        
+        if step == 'waiting_id':
+            try:
+                target_id = int(text)
+                context.user_data['admin_target'] = target_id
+                context.user_data['admin_step'] = 'confirm_add'
+                
+                user_data = db.get_user(target_id)
+                if user_data:
+                    name = user_data['first_name']
+                    username = f"(@{user_data['username']})" if user_data['username'] else ""
+                    info = f"{name} {username}"
+                else:
+                    info = f"User ID {target_id} (belum pernah interact)"
+                
+                await update.message.reply_text(
+                    f"📋 *KONFIRMASI*\n\n"
+                    f"Jadikan {info} sebagai admin?\n\n"
+                    f"Ketik *ya* untuk konfirmasi, atau *tidak* untuk batal.",
+                    parse_mode=ParseMode.MARKDOWN
+                )
+            except ValueError:
+                await update.message.reply_text("❌ User ID harus berupa angka!")
+        
+        elif step == 'confirm_add':
+            if text.lower() == 'ya':
+                target_id = context.user_data['admin_target']
+                
+                if db.add_admin(target_id, user.id):
+                    await update.message.reply_text(f"✅ User `{target_id}` sekarang adalah admin!", parse_mode=ParseMode.MARKDOWN)
+                    db.log_admin_action(user.id, 'add_admin', 'user', str(target_id), "Added as admin")
+                else:
+                    await update.message.reply_text("❌ Gagal menambahkan admin.")
+            else:
+                await update.message.reply_text("✅ Penambahan admin dibatalkan.")
+            
+            del context.user_data['admin_step']
+        
+        elif step == 'edit_id':
+            try:
+                target_id = int(text)
+                
+                if target_id in SUPER_ADMINS:
+                    await update.message.reply_text("❌ Tidak bisa mengedit super admin!")
+                    del context.user_data['admin_step']
+                    return
+                
+                perms = db.get_admin_permissions(target_id)
+                
+                context.user_data['edit_admin_id'] = target_id
+                context.user_data['admin_step'] = 'edit_permissions'
+                
+                perm_text = (
+                    f"✏️ *EDIT PERMISSIONS ADMIN `{target_id}`*\n\n"
+                    f"Permissions saat ini:\n"
+                    f"• Manage Users: {'✅' if perms.get('can_manage_users') else '❌'}\n"
+                    f"• Manage Posts: {'✅' if perms.get('can_manage_posts') else '❌'}\n"
+                    f"• Broadcast: {'✅' if perms.get('can_broadcast') else '❌'}\n"
+                    f"• View Stats: {'✅' if perms.get('can_view_stats') else '❌'}\n\n"
+                    f"Masukkan permissions baru dalam format:\n"
+                    f"users,posts,broadcast,stats\n"
+                    f"Contoh: 1,1,0,1 (1=ya, 0=tidak)"
+                )
+                
+                await update.message.reply_text(perm_text, parse_mode=ParseMode.MARKDOWN)
+                
+            except ValueError:
+                await update.message.reply_text("❌ User ID harus berupa angka!")
+        
+        elif step == 'edit_permissions':
+            try:
+                parts = text.split(',')
+                if len(parts) != 4:
+                    await update.message.reply_text("❌ Format salah! Gunakan: 1,1,0,1")
+                    return
+                
+                permissions = {
+                    'can_manage_users': bool(int(parts[0])),
+                    'can_manage_posts': bool(int(parts[1])),
+                    'can_broadcast': bool(int(parts[2])),
+                    'can_view_stats': bool(int(parts[3]))
+                }
+                
+                target_id = context.user_data['edit_admin_id']
+                
+                if db.update_admin_permissions(target_id, user.id, permissions):
+                    await update.message.reply_text(f"✅ Permissions admin `{target_id}` telah diupdate.", parse_mode=ParseMode.MARKDOWN)
+                    db.log_admin_action(user.id, 'edit_admin', 'user', str(target_id), f"Updated permissions: {permissions}")
+                else:
+                    await update.message.reply_text("❌ Gagal mengupdate permissions.")
+                
+                del context.user_data['admin_step']
+                del context.user_data['edit_admin_id']
+                
+            except:
+                await update.message.reply_text("❌ Format salah! Gunakan: 1,1,0,1")
+        
+        elif step == 'remove_id':
+            try:
+                target_id = int(text)
+                
+                if target_id in SUPER_ADMINS:
+                    await update.message.reply_text("❌ Tidak bisa menghapus super admin!")
+                    del context.user_data['admin_step']
+                    return
+                
+                if db.remove_admin(target_id, user.id):
+                    await update.message.reply_text(f"✅ Admin `{target_id}` telah dihapus.", parse_mode=ParseMode.MARKDOWN)
+                    db.log_admin_action(user.id, 'remove_admin', 'user', str(target_id), "Removed admin")
+                else:
+                    await update.message.reply_text(f"❌ Gagal menghapus admin `{target_id}`", parse_mode=ParseMode.MARKDOWN)
+                
+                del context.user_data['admin_step']
+            except ValueError:
+                await update.message.reply_text("❌ User ID harus berupa angka!")
+
 # ==================== WELCOME NEW MEMBER ====================
 
 async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Welcome new channel members"""
+    """Sapa member baru di channel"""
     if not update.channel_post or not update.channel_post.new_chat_members:
         return
     
@@ -3414,10 +3493,10 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if chat.id != CHANNEL_ID:
         return
     
-    if not db.get_setting_with_type('welcome_enabled', True):
+    if db.get_setting('welcome_enabled') != 'true':
         return
     
-    logger.info(f"🎉 New member detected in channel!")
+    logger.info(f"🎉 MEMBER BARU DETEKSI DI CHANNEL!")
     
     for new_member in message.new_chat_members:
         if new_member.is_bot:
@@ -3432,10 +3511,10 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
             f"Halo {mention}!\n"
             f"Selamat bergabung di *{db.get_setting('bot_name')} Official Channel*!\n\n"
             f"📌 *Link Penting:*\n"
-            f"• [🤖 BOT OFFICIAL]({config.get('urls.bot_official')})\n"
-            f"• [🟢 WA KLAIM BONUS]({config.get('urls.claim')})\n"
-            f"• [📢 CHANNEL WA]({config.get('urls.channel_wa')})\n"
-            f"• [📢 CHANNEL TG]({config.get('urls.channel_tg')})\n\n"
+            f"• [🤖 BOT OFFICIAL](https://t.me/bolapelangi2_bot)\n"
+            f"• [🟢 WA KLAIM BONUS](https://bopel2.link/wa)\n"
+            f"• [📢 CHANNEL WA](https://bopel2.vip/Channel-Whatsapp)\n"
+            f"• [📢 CHANNEL TG](https://bopel2.vip/Channel-Telegram)\n\n"
             f"🔥 *GasPoll!* 🔥"
         )
         
@@ -3446,35 +3525,18 @@ async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 parse_mode=ParseMode.MARKDOWN,
                 disable_web_page_preview=True
             )
-            logger.info(f"✅ Welcome sent for {new_member.first_name}")
+            logger.info(f"✅ Welcome terkirim untuk {new_member.first_name}")
         except Exception as e:
-            logger.error(f"❌ Failed to send welcome: {e}")
-
-# ==================== TEST CHANNEL ====================
-
-async def test_channel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Test channel connection"""
-    user = update.effective_user
-    db.add_or_update_user(user)
-    
-    try:
-        await context.bot.send_message(
-            chat_id=CHANNEL_ID,
-            text="🧪 *TEST BOT*\n\nBot aktif dan berjalan normal!",
-            parse_mode=ParseMode.MARKDOWN
-        )
-        await update.message.reply_text("✅ Pesan test terkirim ke channel!")
-    except Exception as e:
-        await update.message.reply_text(f"❌ Gagal: {e}")
+            logger.error(f"❌ Gagal kirim welcome: {e}")
 
 # ==================== JOB QUEUE ====================
 
 async def check_auto_posts_job(context: ContextTypes.DEFAULT_TYPE):
-    """Job to check and send auto posts"""
+    """Job untuk mengecek dan mengirim auto post"""
     await scheduler.check_and_send_posts(context)
 
 async def check_scheduled_broadcasts_job(context: ContextTypes.DEFAULT_TYPE):
-    """Job to check scheduled broadcasts"""
+    """Job untuk mengecek broadcast terjadwal"""
     pending = db.get_pending_broadcasts()
     
     for broadcast in pending:
@@ -3489,6 +3551,12 @@ async def check_scheduled_broadcasts_job(context: ContextTypes.DEFAULT_TYPE):
                 buttons=json.loads(broadcast['buttons']) if broadcast['buttons'] else None
             )
         )
+
+async def auto_backup_job(context: ContextTypes.DEFAULT_TYPE):
+    """Auto backup database"""
+    if db.get_setting_with_type('auto_backup_enabled', True):
+        db.backup_database()
+        logger.info("💾 Auto backup completed")
 
 # ==================== ERROR HANDLER ====================
 
@@ -3507,10 +3575,10 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ==================== POST INIT ====================
 
 async def post_init(application: Application):
-    """Post initialization function"""
-    logger.info("=" * 80)
-    logger.info("🤖 BOT BOLAPELANGI 2 ULTIMATE PRO v3.0 READY!")
-    logger.info("=" * 80)
+    """Fungsi setelah bot start"""
+    logger.info("=" * 70)
+    logger.info("🤖 BOT BOLAPELANGI 2 ULTIMATE EDITION READY!")
+    logger.info("=" * 70)
     
     try:
         bot_info = await application.bot.get_me()
@@ -3518,11 +3586,13 @@ async def post_init(application: Application):
         logger.info(f"✅ Channel ID: {CHANNEL_ID}")
         logger.info(f"✅ Database: {DATABASE_FILE}")
         
+        # Buat folder yang diperlukan
         os.makedirs('data', exist_ok=True)
         os.makedirs('logs', exist_ok=True)
         os.makedirs('backups', exist_ok=True)
         logger.info("✅ Created required folders")
         
+        # Set bot commands
         commands = [
             BotCommand("start", "Mulai bot"),
             BotCommand("help", "Bantuan"),
@@ -3530,65 +3600,81 @@ async def post_init(application: Application):
             BotCommand("promo", "Lihat promo"),
             BotCommand("stats", "Statistik bot"),
             BotCommand("admin", "Panel admin"),
-            BotCommand("list_jadwal", "Lihat jadwal auto post"),
-            BotCommand("tambah_jadwal", "Tambah jadwal auto post"),
+            BotCommand("users", "Daftar user"),
+            BotCommand("broadcast", "Kirim broadcast"),
+            BotCommand("posts", "Kelola auto post"),
+            BotCommand("logs", "Lihat log"),
         ]
+        
+        if db.is_super_admin(bot_info.id):
+            commands.extend([
+                BotCommand("admins", "Kelola admin"),
+                BotCommand("settings", "Pengaturan"),
+                BotCommand("set", "Ubah setting"),
+                BotCommand("backup", "Backup database"),
+                BotCommand("block", "Blokir user"),
+                BotCommand("unblock", "Buka blokir"),
+                BotCommand("ban", "Ban user"),
+                BotCommand("templates", "Kelola template"),
+            ])
         
         await application.bot.set_my_commands(commands)
         logger.info("✅ Bot commands set")
         
+        # Setup jobs
         job_queue = application.job_queue
         if job_queue:
             job_queue.run_repeating(check_auto_posts_job, interval=60, first=10)
             job_queue.run_repeating(check_scheduled_broadcasts_job, interval=300, first=30)
+            job_queue.run_repeating(auto_backup_job, interval=86400, first=3600)
             logger.info("✅ Jobs scheduled")
         
+        # Kirim startup ke channel
         try:
             await application.bot.send_message(
                 chat_id=CHANNEL_ID,
-                text="🤖 *Bot Ultimate Pro v3.0 Aktif*\n\n✅ Sistem auto post & broadcast siap!",
+                text="🤖 *Bot Ultimate Edition Aktif*\n\n✅ Sistem auto post & broadcast siap!",
                 parse_mode=ParseMode.MARKDOWN
             )
-            logger.info("✅ Startup message sent to channel")
+            logger.info("✅ Pesan startup terkirim ke channel")
         except Exception as e:
-            logger.error(f"❌ Cannot send to channel: {e}")
+            logger.error(f"❌ Tidak bisa kirim ke channel: {e}")
         
         user_stats = db.get_user_count()
-        logger.info(f"✅ Total users: {user_stats['total']}")
-        logger.info(f"✅ Total admins: {len(db.get_all_admins())}")
-        logger.info(f"✅ Total auto posts (JSON): {len(post_manager.posts)}")
-        
-        # Jadwalkan pengecekan pertama
-        await scheduler.schedule_next_run(application)
+        logger.info(f"✅ Total user di database: {user_stats['total']}")
+        logger.info(f"✅ Total admin: {len(db.get_all_admins())}")
+        logger.info(f"✅ Total auto posts: {len(db.get_all_posts())}")
         
     except Exception as e:
-        logger.error(f"❌ Post init error: {e}")
+        logger.error(f"❌ Gagal inisialisasi: {e}")
 
 # ==================== MAIN FUNCTION ====================
 
 def main():
     """Main function"""
     
-    print("=" * 80)
-    print("🤖 BOT BOLAPELANGI 2 - ULTIMATE PRO v3.0")
-    print("=" * 80)
+    print("=" * 70)
+    print("🤖 BOT BOLAPELANGI 2 - ULTIMATE EDITION")
+    print("=" * 70)
     print("🔧 FITUR SUPER LENGKAP:")
     print("   ✅ Auto Welcome Member")
-    print("   ✅ Auto Post Terjadwal (JSON & SQLite)")
+    print("   ✅ Auto Post Terjadwal")
     print("   ✅ Broadcast System with Queue")
     print("   ✅ Database SQLite dengan Backup")
-    print("   ✅ Admin Management")
+    print("   ✅ Admin Management with Permissions")
     print("   ✅ User Tracking & Analytics")
     print("   ✅ Super Admin Protection")
     print("   ✅ Statistics & Logs")
+    print("   ✅ Message Templates")
     print("   ✅ Config via Telegram")
-    print("=" * 80)
+    print("   ✅ Auto Backup")
+    print("=" * 70)
     
     if not BOT_TOKEN or len(BOT_TOKEN) < 40:
         print("❌ ERROR: BOT_TOKEN tidak valid!")
         sys.exit(1)
     
-    print(f"✅ SUPER ADMIN: {SUPER_ADMINS}")
+    print(f"✅ SUPER ADMIN TERDAFTAR: {SUPER_ADMINS}")
     
     try:
         application = (
@@ -3598,21 +3684,12 @@ def main():
             .concurrent_updates(True)
             .build()
         )
-        print("✅ Application created")
+        print("✅ Application berhasil dibuat")
     except Exception as e:
-        print(f"❌ Failed: {e}")
+        print(f"❌ Gagal: {e}")
         sys.exit(1)
     
-    # Command handlers dari script pertama
-    application.add_handler(CommandHandler("admin", admin_command))
-    application.add_handler(CommandHandler("list_jadwal", list_jadwal_command))
-    application.add_handler(CommandHandler("tambah_jadwal", tambah_jadwal_command))
-    application.add_handler(CommandHandler("edit_jadwal", edit_jadwal_command))
-    application.add_handler(CommandHandler("hapus_jadwal", hapus_jadwal_command))
-    application.add_handler(CommandHandler("aktifkan_jadwal", aktifkan_jadwal_command))
-    application.add_handler(CommandHandler("nonaktifkan_jadwal", nonaktifkan_jadwal_command))
-    
-    # Command handlers dari script kedua
+    # Command handlers
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("info", info_command))
@@ -3620,11 +3697,12 @@ def main():
     application.add_handler(CommandHandler("stats", stats_command))
     application.add_handler(CommandHandler("test_channel", test_channel_command))
     
-    # Admin commands dari script kedua
-    application.add_handler(CommandHandler("admin_panel", admin_panel_command))  # admin panel utama
+    # Admin commands
+    application.add_handler(CommandHandler("admin", admin_command))
     application.add_handler(CommandHandler("users", users_command))
     application.add_handler(CommandHandler("broadcast", broadcast_command))
     application.add_handler(CommandHandler("posts", posts_command))
+    application.add_handler(CommandHandler("logs", logs_command))
     
     # Super admin commands
     application.add_handler(CommandHandler("admins", admins_command))
@@ -3632,13 +3710,15 @@ def main():
     application.add_handler(CommandHandler("set", set_command))
     application.add_handler(CommandHandler("block", block_command))
     application.add_handler(CommandHandler("unblock", unblock_command))
+    application.add_handler(CommandHandler("ban", ban_command))
     application.add_handler(CommandHandler("backup", backup_command))
-    
-    # Message handler untuk input
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_input))
+    application.add_handler(CommandHandler("templates", templates_command))
     
     # Callback handler
     application.add_handler(CallbackQueryHandler(button_callback))
+    
+    # Message handler
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     # Welcome handler
     application.add_handler(
@@ -3651,14 +3731,15 @@ def main():
     # Error handler
     application.add_error_handler(error_handler)
     
-    print("=" * 80)
-    print("📢 BOT RUNNING - ULTIMATE PRO v3.0")
-    print("📢 Fitur: Auto Welcome | Auto Post (JSON+SQLite) | Broadcast | Admin Panel")
+    print("=" * 70)
+    print("📢 BOT RUNNING - ULTIMATE EDITION")
+    print("📢 Fitur: Auto Welcome | Auto Post | Broadcast | Admin Panel | Backup | Logs | Templates")
     print("📢 Database: SQLite dengan auto backup")
     print("📢 Super Admin: @Bolapelangi2 & @bolapelangi_2")
-    print("=" * 80)
+    print("=" * 70)
     sys.stdout.flush()
     
+    # Jalankan bot
     application.run_polling(
         allowed_updates=["message", "channel_post", "callback_query"],
         drop_pending_updates=True
