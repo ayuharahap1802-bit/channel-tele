@@ -1,0 +1,50 @@
+{
+    "filters": [
+        {
+            "name": "Semua User",
+            "description": "Kirim ke semua user",
+            "criteria": {}
+        },
+        {
+            "name": "User Aktif 7 Hari",
+            "description": "User yang aktif dalam 7 hari terakhir",
+            "criteria": {
+                "active_last_days": 7,
+                "not_blocked": true,
+                "not_banned": true
+            }
+        },
+        {
+            "name": "User Baru",
+            "description": "User yang bergabung dalam 24 jam terakhir",
+            "criteria": {
+                "joined_after": "datetime('now', '-1 day')",
+                "not_blocked": true
+            }
+        },
+        {
+            "name": "User Bahasa Indonesia",
+            "description": "User dengan bahasa Indonesia",
+            "criteria": {
+                "language": "id",
+                "not_blocked": true
+            }
+        },
+        {
+            "name": "User Bahasa Inggris",
+            "description": "User dengan bahasa Inggris",
+            "criteria": {
+                "language": "en",
+                "not_blocked": true
+            }
+        },
+        {
+            "name": "Tidak Termasuk Admin",
+            "description": "Semua user kecuali admin",
+            "criteria": {
+                "not_admin": true,
+                "not_blocked": true
+            }
+        }
+    ]
+}
