@@ -633,71 +633,9 @@ class DatabaseManager:
             logger.error(f"❌ Gagal update setting {key}: {e}")
             return False
 
-# ==================== LOAD JSON DATA TO DATABASE ====================
-
-def load_json_to_database():
-    """Memuat data dari file JSON ke database SQLite"""
-    try:
-        data_folder = 'data'
-        
-        # Buat folder data jika belum ada
-        if not os.path.exists(data_folder):
-            os.makedirs(data_folder)
-            logger.info(f"✅ Created data folder: {data_folder}")
-        
-        # Load auto_posts.json
-        posts_path = os.path.join(data_folder, 'auto_posts.json')
-        if os.path.exists(posts_path):
-            with open(posts_path, 'r') as f:
-                posts = json.load(f)
-                
-            # Cek apakah tabel auto_posts kosong
-            with db.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT COUNT(*) FROM auto_posts')
-                count = cursor.fetchone()[0]
-                
-                if count == 0 and posts:
-                    for post in posts:
-                        cursor.execute('''
-                            INSERT INTO auto_posts (time, text, image_url, button_text, button_url, is_active, created_by)
-                            VALUES (?, ?, ?, ?, ?, ?, ?)
-                        ''', (
-                            post.get('time'),
-                            post.get('text'),
-                            post.get('image_url'),
-                            post.get('button_text'),
-                            post.get('button_url'),
-                            post.get('is_active', True),
-                            SUPER_ADMINS[0] if SUPER_ADMINS else 850434834
-                        ))
-                    logger.info(f"✅ Loaded {len(posts)} auto posts from {posts_path}")
-        
-        # Load broadcast_templates.json (optional)
-        templates_path = os.path.join(data_folder, 'broadcast_templates.json')
-        if os.path.exists(templates_path):
-            logger.info(f"✅ Broadcast templates available at {templates_path}")
-        
-        # Load bot_settings.json
-        settings_path = os.path.join(data_folder, 'bot_settings.json')
-        if os.path.exists(settings_path):
-            with open(settings_path, 'r') as f:
-                settings = json.load(f)
-            
-            if 'general' in settings:
-                db.update_setting('bot_name', settings['general'].get('bot_name', 'BOLAPELANGI 2 Bot'), SUPER_ADMINS[0] if SUPER_ADMINS else 850434834)
-            
-            logger.info(f"✅ Loaded bot settings from {settings_path}")
-            
-    except Exception as e:
-        logger.error(f"❌ Gagal load JSON ke database: {e}")
-
 # ==================== INISIALISASI DATABASE ====================
 
 db = DatabaseManager()
-
-# Load JSON data setelah db siap
-load_json_to_database()
 
 # ==================== AUTO POST SCHEDULER ====================
 
@@ -1254,10 +1192,21 @@ async def admins_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     db.log_interaction(user.id, '/admins')
     
-    text = "👑 *MANAJEMEN ADMIN*\n\nPilih menu di bawah:\n\n"
+    admins = db.get_all_admins()
+    
+    text = "👑 *MANAJEMEN ADMIN*\n\n"
+    text += f"Total Admin: {len(admins)}\n\n"
+    
+    for admin in admins:
+        super_star = "⭐" if admin['is_super'] else "👑"
+        name = admin.get('first_name') or f"User {admin['user_id']}"
+        username = f"@{admin['username']}" if admin.get('username') else ""
+        text += f"{super_star} `{admin['user_id']}` - {name} {username}\n"
+        text += f"   📅 Added: {admin['added_date'][:10]}\n\n"
+    
+    text += "\nPilih menu di bawah:"
     
     keyboard = [
-        [InlineKeyboardButton("📋 LIHAT SEMUA ADMIN", callback_data='admins_list')],
         [InlineKeyboardButton("➕ TAMBAH ADMIN", callback_data='admins_add')],
         [InlineKeyboardButton("➖ HAPUS ADMIN", callback_data='admins_remove')],
         [InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')]
@@ -1662,10 +1611,23 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await query.message.reply_text("❌ Hanya super admin!")
                 return
             
-            text = "👑 *MANAJEMEN ADMIN*\n\nPilih menu:"
+            admins = db.get_all_admins()
+            
+            text = "👑 *MANAJEMEN ADMIN*\n\n"
+            text += f"Total Admin: {len(admins)}\n\n"
+            
+            for admin in admins[:5]:
+                super_star = "⭐" if admin['is_super'] else "👑"
+                name = admin.get('first_name') or f"User {admin['user_id']}"
+                text += f"{super_star} `{admin['user_id']}` - {name}\n"
+            
+            if len(admins) > 5:
+                text += f"\n...dan {len(admins)-5} lainnya\n"
+            
+            text += "\nPilih menu:"
             
             keyboard = [
-                [InlineKeyboardButton("📋 LIHAT SEMUA ADMIN", callback_data='admins_list')],
+                [InlineKeyboardButton("📋 LIHAT SEMUA", callback_data='admins_list')],
                 [InlineKeyboardButton("➕ TAMBAH ADMIN", callback_data='admins_add')],
                 [InlineKeyboardButton("➖ HAPUS ADMIN", callback_data='admins_remove')],
                 [InlineKeyboardButton("🔙 KEMBALI", callback_data='admin_dashboard')]
@@ -2505,9 +2467,6 @@ async def post_init(application: Application):
         os.makedirs('logs', exist_ok=True)
         os.makedirs('backups', exist_ok=True)
         logger.info("✅ Created required folders")
-        
-        # Load JSON data ke database (already done, but call again to be sure)
-        load_json_to_database()
         
         # Job untuk auto post (setiap menit)
         job_queue = application.job_queue
