@@ -5,7 +5,9 @@
         "image_url": "https://i.ibb.co/your-image/morning-promo.jpg",
         "button_text": "LIHAT PROMO",
         "button_url": "https://t.me/bolapelangi2_bot",
-        "is_active": true
+        "is_active": true,
+        "category": "pagi",
+        "priority": 1
     },
     {
         "time": "12:00",
@@ -13,7 +15,9 @@
         "image_url": null,
         "button_text": "CEK PREDIKSI",
         "button_url": "https://bopel2.vip/ChannelWA-Jadwal-Prediksi",
-        "is_active": true
+        "is_active": true,
+        "category": "siang",
+        "priority": 2
     },
     {
         "time": "19:00",
@@ -21,6 +25,18 @@
         "image_url": "https://i.ibb.co/your-image/promo-banner.jpg",
         "button_text": "KLAIM BONUS",
         "button_url": "https://bopel2.link/wa",
-        "is_active": true
+        "is_active": true,
+        "category": "malam",
+        "priority": 3
+    },
+    {
+        "time": "15:30",
+        "text": "⚡ *FLASH SALE* ⚡\n\nBonus deposit 20% untuk semua member! Hanya hari ini!\n\n🟢 [KLAIM BONUS](https://bopel2.link/wa)",
+        "image_url": "https://i.ibb.co/your-image/flash-sale.jpg",
+        "button_text": "KLAIM NOW",
+        "button_url": "https://bopel2.link/wa",
+        "is_active": true,
+        "category": "promo",
+        "priority": 2
     }
 ]
