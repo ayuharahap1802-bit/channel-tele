@@ -31,4 +31,27 @@
             "retention_days": 30
         },
         {
-            "name":
+            "name": "Update Statistics",
+            "interval": 3600,
+            "unit": "seconds",
+            "function": "update_statistics",
+            "enabled": true
+        },
+        {
+            "name": "Check Bot Health",
+            "interval": 300,
+            "unit": "seconds",
+            "function": "health_check",
+            "enabled": true
+        },
+        {
+            "name": "Send Daily Report",
+            "interval": 24,
+            "unit": "hours",
+            "function": "send_daily_report",
+            "enabled": false,
+            "time": "08:00",
+            "recipients": ["super_admin"]
+        }
+    ]
+}
