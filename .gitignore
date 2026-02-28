@@ -2,11 +2,14 @@
 *.db
 *.db-journal
 /backups/
+*.sqlite
+*.sqlite3
 
 # Environment
 .env
 .env.local
 .env.production
+.env.development
 
 # Python
 __pycache__/
@@ -19,10 +22,13 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+pythonenv*
 
 # Logs
 *.log
+logs/
 bot_activity.log
+error.log
 
 # IDE
 .vscode/
@@ -30,7 +36,27 @@ bot_activity.log
 *.swp
 *.swo
 *~
+.project
+.classpath
+.settings/
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+*.pid
+*.seed
+*.pid.lock
+
+# Backups
+*.backup
+backups/*
+
+# Data
+data/config.local.json
+data/*.backup
