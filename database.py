@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 from config import Config
 
+# Create engine
 engine = create_engine(Config.DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
@@ -16,7 +17,7 @@ class User(Base):
     user_id = Column(BigInteger, unique=True, nullable=False)
     username = Column(String(255))
     first_name = Column(String(255))
-    last_name = Column(String(255))
+    last_name = Column(String(255), default='')
     language = Column(String(10), default='id')
     is_active = Column(Boolean, default=True)
     joined_at = Column(DateTime, default=datetime.utcnow)
@@ -25,11 +26,14 @@ class User(Base):
     
     # Admin fields
     is_admin = Column(Boolean, default=False)
-    admin_level = Column(String(50), default='user')  # super_admin, admin, moderator, broadcaster
-    permissions = Column(Text, default='{}')  # JSON string of permissions
+    admin_level = Column(String(50), default='user')
+    permissions = Column(Text, default='{}')
     
     def get_permissions(self):
-        return json.loads(self.permissions) if self.permissions else {}
+        try:
+            return json.loads(self.permissions) if self.permissions else {}
+        except:
+            return {}
     
     def set_permissions(self, perms_dict):
         self.permissions = json.dumps(perms_dict)
@@ -40,9 +44,8 @@ class AdminLog(Base):
     id = Column(Integer, primary_key=True)
     admin_id = Column(BigInteger, nullable=False)
     action = Column(String(255), nullable=False)
-    details = Column(Text)
+    details = Column(Text, default='')
     timestamp = Column(DateTime, default=datetime.utcnow)
-    ip_address = Column(String(50))
 
 class Broadcast(Base):
     __tablename__ = 'broadcasts'
@@ -51,8 +54,8 @@ class Broadcast(Base):
     message_text = Column(Text, nullable=False)
     created_by = Column(BigInteger, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    scheduled_time = Column(DateTime)
-    status = Column(String(50), default='pending')  # pending, sending, completed, failed
+    scheduled_time = Column(DateTime, nullable=True)
+    status = Column(String(50), default='pending')
     total_recipients = Column(Integer, default=0)
     sent_count = Column(Integer, default=0)
     failed_count = Column(Integer, default=0)
@@ -63,12 +66,12 @@ class AutoPost(Base):
     id = Column(Integer, primary_key=True)
     channel_id = Column(BigInteger, nullable=False)
     message_text = Column(Text, nullable=False)
-    schedule_time = Column(String(50))  # Format: "HH:MM"
-    schedule_days = Column(String(255))  # JSON array of days (0-6, Monday=0)
+    schedule_time = Column(String(50))
+    schedule_days = Column(String(255), default='[0,1,2,3,4,5,6]')
     is_active = Column(Boolean, default=True)
     created_by = Column(BigInteger)
     created_at = Column(DateTime, default=datetime.utcnow)
-    last_posted = Column(DateTime)
+    last_posted = Column(DateTime, nullable=True)
 
 class QuickReply(Base):
     __tablename__ = 'quick_replies'
@@ -77,16 +80,6 @@ class QuickReply(Base):
     keyword = Column(String(255), unique=True, nullable=False)
     response = Column(Text, nullable=False)
     is_active = Column(Boolean, default=True)
-    created_by = Column(BigInteger)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-class MessageTemplate(Base):
-    __tablename__ = 'message_templates'
-    
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255), unique=True, nullable=False)
-    content = Column(Text, nullable=False)
-    category = Column(String(100))
     created_by = Column(BigInteger)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -105,13 +98,12 @@ class DatabaseBackup(Base):
     id = Column(Integer, primary_key=True)
     filename = Column(String(500))
     created_at = Column(DateTime, default=datetime.utcnow)
-    size = Column(Integer)
+    size = Column(Integer, default=0)
     created_by = Column(BigInteger)
 
 # Create tables
 Base.metadata.create_all(bind=engine)
 
-# Database helper functions
 def get_db():
     db = SessionLocal()
     try:
@@ -120,6 +112,7 @@ def get_db():
         db.close()
 
 def init_settings():
+    """Initialize default settings"""
     db = SessionLocal()
     default_settings = [
         ('bot_name', 'Telegram Bot', 'Nama bot'),
