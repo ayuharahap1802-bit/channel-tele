@@ -255,4 +255,33 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = query.data
     
     if data.startswith('users_page_'):
-        page = data
+        page = data.replace('users_page_', '')
+        await users_command(update, context, args=[page])
+    
+    elif data == 'users_search':
+        await query.edit_message_text("🔍 Masukkan username atau user ID:")
+        context.user_data['search_step'] = 'waiting_search'
+    
+    elif data == 'users_stats':
+        await admin_stats_command(update, context)
+    
+    elif data == 'logs_refresh':
+        await logs_command(update, context)
+
+def setup_admin_handlers(app):
+    """Setup admin command handlers"""
+    app.add_handler(CommandHandler("admin", admin_dashboard))
+    app.add_handler(CommandHandler("users", users_command))
+    app.add_handler(CommandHandler("broadcast", broadcast_command))
+    app.add_handler(CommandHandler("posts", posts_command))
+    app.add_handler(CommandHandler("admin_stats", admin_stats_command))
+    app.add_handler(CommandHandler("logs", logs_command))
+    
+    # Handle callbacks
+    app.add_handler(CallbackQueryHandler(button_callback))
+    
+    # Handle broadcast message input
+    app.add_handler(MessageHandler(
+        filters.TEXT & ~filters.COMMAND & filters.User(),
+        handle_broadcast_message
+    ))
