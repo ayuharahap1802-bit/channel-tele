@@ -1,0 +1,13 @@
+{
+    "welcome": "👋 Welcome, {name}!\n\nI am a multi-functional bot with various advanced features. Use /help to see the list of commands.",
+    "help": "📋 *Bot Help*\n\n*Public Commands:*\n/start - Start bot\n/help - This help\n/info - Account info\n/promo - View promos\n/stats - Bot stats\n\n*Admin Commands:*\n/admin - Admin dashboard\n/users - Manage users\n/broadcast - Send broadcast\n/posts - Manage auto posts",
+    "info": "📊 *Account Information*\n\n🆔 ID: `{user_id}`\n👤 Username: @{username}\n📝 Name: {first_name} {last_name}\n🗣 Language: {language}\n📅 Joined: {joined_at}\n🔄 Interactions: {interactions}",
+    "stats": "📈 *Bot Statistics*\n\n👥 Total Users: {total_users}\n📊 Active Today: {active_today}\n📝 Total Posts: {total_posts}\n📨 Total Broadcasts: {total_broadcasts}\n⚡️ Status: {status}",
+    "promo": "🎉 *Latest Promos*\n\n{promos}",
+    
+    "admin_dashboard": "👑 *Admin Dashboard*\n\nWelcome, {name}\nLevel: {level}\n\n*Admin Menu:*\n👥 /users - Manage Users\n📨 /broadcast - Broadcast\n📝 /posts - Auto Post\n⚙️ /settings - Settings\n📊 /admin_stats - Statistics\n📋 /logs - Activity Logs",
+    
+    "no_permission": "⛔ You don't have permission for this command.",
+    "feature_disabled": "⚠️ This feature is currently disabled.",
+    "error": "❌ An error occurred. Please try again."
+}
