@@ -1,0 +1,16 @@
+{
+    "welcome_templates": [
+        "Selamat datang {name} di channel kami! 🎉",
+        "Halo {name}, senang kamu bergabung! 👋",
+        "Welcome {name}! Semoga betah di sini 😊"
+    ],
+    "broadcast_templates": [
+        "📢 *Pengumuman*\n\n{message}",
+        "🔔 *Info Penting*\n\n{message}",
+        "✨ *Update Terbaru*\n\n{message}"
+    ],
+    "promo_templates": [
+        "🔥 *PROMO SPESIAL*\n\n{message}\n\n⌛️ Periode: {period}",
+        "🎁 *HADIAH MENARIK*\n\n{message}\n\n📆 Hanya sampai {end_date}"
+    ]
+}
