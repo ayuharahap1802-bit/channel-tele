@@ -2,12 +2,14 @@
 """
 Telegram Bot with Advanced Features
 Main entry point for Railway deployment
+Version: 1.0.0
 """
 
 import logging
 import sys
+import os
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackQueryHandler
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler
 from telegram.error import TelegramError
 
 # Import configuration
@@ -17,7 +19,9 @@ from config import Config
 from database import init_settings, get_db
 
 # Import handlers
-from handlers import public, admin, superadmin
+from handlers.public import setup_public_handlers
+from handlers.admin import setup_admin_handlers
+from handlers.superadmin import setup_superadmin_handlers
 
 # Import scheduler
 from scheduler import BotScheduler
@@ -27,7 +31,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO,
     handlers=[
-        logging.FileHandler('bot.log'),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -42,12 +45,16 @@ class TelegramBot:
         
         # Validate token
         if not self.token:
-            logger.error("No BOT_TOKEN provided! Please set in environment variables.")
+            logger.error("❌ No BOT_TOKEN provided! Please set in environment variables.")
             sys.exit(1)
         
         # Initialize database settings
-        init_settings()
-        logger.info("Database initialized")
+        try:
+            init_settings()
+            logger.info("✅ Database initialized successfully")
+        except Exception as e:
+            logger.error(f"❌ Database initialization failed: {e}")
+            sys.exit(1)
     
     async def error_handler(self, update: Update, context):
         """Handle errors"""
@@ -61,12 +68,46 @@ class TelegramBot:
         except:
             pass
     
+    async def start_command(self, update: Update, context):
+        """Start command handler"""
+        await update.message.reply_text(
+            "🤖 *Bot is running!*\n\n"
+            "Use /help to see available commands.",
+            parse_mode='Markdown'
+        )
+    
+    async def help_command(self, update: Update, context):
+        """Help command handler"""
+        help_text = """
+📋 *Available Commands:*
+
+*Public Commands:*
+/start - Start the bot
+/help - Show this help
+/info - Your account info
+/stats - Bot statistics
+
+*Admin Commands:*
+/admin - Admin dashboard
+/users - Manage users
+/broadcast - Send broadcast
+
+*Super Admin:*
+/admins - Manage admins
+/settings - View settings
+/backup - Backup database
+        """
+        await update.message.reply_text(help_text, parse_mode='Markdown')
+    
     async def health_check(self, update: Update, context):
         """Health check endpoint"""
+        enabled_features = [k for k, v in Config.FEATURES.items() if v]
         await update.message.reply_text(
-            "✅ Bot is healthy!\n\n"
-            f"Uptime: Running\n"
-            f"Features: {', '.join([k for k, v in Config.FEATURES.items() if v])}"
+            "✅ *Bot is healthy!*\n\n"
+            f"• Status: Online\n"
+            f"• Features: {len(enabled_features)} enabled\n"
+            f"• Version: 1.0.0",
+            parse_mode='Markdown'
         )
     
     async def cancel_command(self, update: Update, context):
@@ -77,23 +118,25 @@ class TelegramBot:
     def setup_handlers(self):
         """Setup all command handlers"""
         
-        # Public handlers
-        public.setup_public_handlers(self.app)
-        
-        # Admin handlers
-        admin.setup_admin_handlers(self.app)
-        
-        # Super admin handlers
-        superadmin.setup_superadmin_handlers(self.app)
-        
-        # General handlers
+        # Basic commands
+        self.app.add_handler(CommandHandler("start", self.start_command))
+        self.app.add_handler(CommandHandler("help", self.help_command))
         self.app.add_handler(CommandHandler("health", self.health_check))
         self.app.add_handler(CommandHandler("cancel", self.cancel_command))
+        
+        # Public handlers
+        setup_public_handlers(self.app)
+        
+        # Admin handlers
+        setup_admin_handlers(self.app)
+        
+        # Super admin handlers
+        setup_superadmin_handlers(self.app)
         
         # Error handler
         self.app.add_error_handler(self.error_handler)
         
-        logger.info("All handlers registered")
+        logger.info("✅ All handlers registered successfully")
     
     def run(self):
         """Run the bot"""
@@ -109,17 +152,20 @@ class TelegramBot:
             self.scheduler.start()
             
             # Start bot
-            logger.info("Starting bot...")
+            logger.info("🚀 Starting bot...")
+            logger.info(f"🤖 Bot username: @{Config.BOT_USERNAME}")
+            logger.info(f"👑 Super admins: {Config.SUPER_ADMIN_IDS}")
+            
             self.app.run_polling(
                 allowed_updates=Update.ALL_TYPES,
                 drop_pending_updates=True
             )
             
         except TelegramError as e:
-            logger.error(f"Telegram error: {e}")
+            logger.error(f"❌ Telegram error: {e}")
             sys.exit(1)
         except Exception as e:
-            logger.error(f"Unexpected error: {e}")
+            logger.error(f"❌ Unexpected error: {e}")
             sys.exit(1)
         finally:
             if self.scheduler:
@@ -127,16 +173,9 @@ class TelegramBot:
 
 def main():
     """Main entry point"""
-    logger.info("=" * 50)
-    logger.info("Starting Telegram Bot with Advanced Features")
-    logger.info("=" * 50)
-    
-    # Check if running on Railway
-    if Config.BOT_TOKEN:
-        logger.info("Configuration loaded successfully")
-        logger.info(f"Features enabled: {', '.join([k for k, v in Config.FEATURES.items() if v])}")
-    else:
-        logger.warning("Running with minimal configuration")
+    print("=" * 60)
+    print("🚀 Starting Telegram Bot with Advanced Features")
+    print("=" * 60)
     
     # Run bot
     bot = TelegramBot()
